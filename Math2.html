@@ -1,0 +1,2163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โลบ็อกนักคิด พิชิตตัวเลขลับ - เกมคณิตศาสตร์ ป.2</title>
+    <!-- Tailwind CSS for modern responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Mitr for cute typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Mitr:wght=200;400;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome for cute icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Mitr', 'Fredoka', sans-serif;
+            background: radial-gradient(circle, #e0f2fe 0%, #bae6fd 100%);
+            user-select: none;
+            overflow-x: hidden;
+        }
+        
+        /* Floating animations for Lobox and game components */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        
+        .lobox-avatar-container {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes ai-pulse-border {
+            0%, 100% { border-color: rgba(236, 72, 153, 0.4); }
+            50% { border-color: rgba(236, 72, 153, 1); }
+        }
+        .ai-active-border {
+            animation: ai-pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-gaze {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .glowing-eye {
+            animation: pulse-gaze 2s infinite;
+        }
+
+        /* Bounce for correct feedback */
+        @keyframes lobox-jump {
+            0%, 100% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-40px) scale(1.1) rotate(5deg); }
+            50% { transform: translateY(0) scale(0.95) rotate(-5deg); }
+            70% { transform: translateY(-15px) scale(1.02); }
+        }
+
+        .jump-animation {
+            animation: lobox-jump 0.8s ease-in-out;
+        }
+
+        /* Shake for wrong feedback */
+        @keyframes lobox-shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px) rotate(-3deg); }
+            40%, 80% { transform: translateX(10px) rotate(3deg); }
+        }
+
+        .shake-animation {
+            animation: lobox-shake 0.5s ease-in-out;
+        }
+        
+        /* Custom scrollbar for leaderboard & inventory */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #38bdf8;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-2 md:p-6 flex items-center justify-center">
+
+    <!-- MAIN CONTAINER -->
+    <div class="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border-4 border-sky-400 overflow-hidden relative flex flex-col min-h-[640px] md:min-h-[700px]">
+        
+        <!-- HEADER / NAVIGATION BAR -->
+        <div class="bg-gradient-to-r from-sky-400 via-blue-400 to-indigo-500 p-4 text-white flex justify-between items-center shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-2 rounded-full w-10 h-10 flex items-center justify-center text-blue-500 shadow">
+                    <i class="fa-solid fa-robot text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wider">โลบ็อกนักคิด พิชิตตัวเลขลับ!</h1>
+                    <p class="text-xs text-sky-100 hidden md:block">กลุ่มสาระการเรียนรู้คณิตศาสตร์ ชั้นประถมศึกษาปีที่ 2</p>
+                </div>
+            </div>
+            
+            <!-- User Status / Currency & Key Setup -->
+            <div class="flex items-center gap-2 md:gap-4">
+                <div class="bg-yellow-400/30 border border-yellow-300 rounded-full px-3 py-1 flex items-center gap-2 text-yellow-100 text-sm">
+                    <i class="fa-solid fa-coins text-yellow-300"></i>
+                    <span id="player-coins" class="font-bold text-white">0</span>
+                </div>
+                <div id="active-user-display" class="bg-white/20 px-3 py-1 rounded-lg text-sm hidden font-semibold">
+                    <i class="fa-solid fa-user mr-1 text-sky-200"></i> <span id="current-username">นักเรียน</span>
+                </div>
+                <!-- API Key configuration button -->
+                <button onclick="openApiKeyModal()" class="bg-pink-500 hover:bg-pink-600 text-white text-xs px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 shadow font-bold" title="ตั้งค่าครู AI และฉากวิเศษ">
+                    <i class="fa-solid fa-key"></i> <span class="hidden sm:inline">กุญแจวิเศษ AI</span>
+                </button>
+                <!-- Reset Button -->
+                <button onclick="confirmReset()" class="text-xs bg-red-500/20 hover:bg-red-500 px-2 py-1.5 rounded transition text-red-100" title="เริ่มเกมใหม่">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- NEW: CUTE EXIT GAME CONFIRMATION MODAL -->
+        <div id="exit-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white border-8 border-amber-400 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl transform scale-100 transition-transform">
+                <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                    <i class="fa-solid fa-door-open"></i>
+                </div>
+                <h3 class="text-2xl font-extrabold text-slate-800">ต้องการออกจากด่านใช่ไหม?</h3>
+                <p id="exit-modal-desc" class="text-slate-600 text-sm mt-2 font-semibold">คะแนนสะสมในรอบนี้จะยังไม่ถูกบันทึกนะจ๊ะเด็ก ๆ</p>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeExitModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-sm transition">
+                        เล่นต่อ 🎮
+                    </button>
+                    <button onclick="executeExitGame()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-sm shadow transition">
+                        ออกเลย 🚪
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK TIME EVENT (QTE) OVERLAY MODAL -->
+        <div id="qte-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white border-8 border-pink-400 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl transform scale-95 transition-transform duration-300">
+                <span class="bg-pink-100 text-pink-700 font-bold px-4 py-1 rounded-full text-sm animate-pulse block w-max mx-auto">
+                    🚨 แจ้งเตือนด่วนพิเศษ! 🚨
+                </span>
+                <h2 id="qte-title" class="text-3xl font-black text-pink-600 mt-2">อุกกาบาตน่ารักตกลงมา!</h2>
+                <p id="qte-desc" class="text-slate-600 text-sm mt-2 font-semibold">กางบาเรียปกป้องโลบ็อกด่วน! กดปุ่มหัวใจด้านล่างรัวๆ เลยจ้า!</p>
+                
+                <!-- Target visual bar -->
+                <div class="mt-6 w-full bg-slate-100 h-6 rounded-full overflow-hidden border-2 border-pink-200 relative">
+                    <div id="qte-progress-bar" class="bg-gradient-to-r from-pink-400 to-rose-500 h-full w-0 transition-all duration-100"></div>
+                    <div id="qte-target-text" class="absolute inset-0 flex items-center justify-center text-xs font-bold text-pink-900">0 / 15 ครั้ง</div>
+                </div>
+
+                <!-- Timer count -->
+                <p class="text-rose-500 text-lg font-bold mt-2"><i class="fa-solid fa-hourglass-half animate-spin mr-1"></i> เวลาที่เหลือ: <span id="qte-timer">5.0</span> วินาที</p>
+
+                <!-- Giant Action Button -->
+                <button id="qte-click-btn" onclick="registerQteTap()" class="mt-4 w-28 h-28 bg-gradient-to-br from-pink-400 to-rose-600 active:scale-90 hover:from-pink-500 hover:to-rose-700 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white mx-auto transition-transform">
+                    <i class="fa-solid fa-heart text-4xl animate-bounce"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- TEACHER/API KEY SETTINGS MODAL -->
+        <div id="api-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white border-8 border-indigo-400 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative">
+                <button onclick="closeApiKeyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="text-center">
+                    <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-xs">🔒 การควบคุมสิทธิ์สไตล์คุณครู</span>
+                    <h2 class="text-2xl font-extrabold text-slate-800 mt-2"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1"></i> ปลดล็อกฟีเจอร์เวทมนตร์ AI</h2>
+                    <p class="text-slate-500 text-xs mt-1">กรอกรหัสคีย์วิเศษเพื่อให้นักเรียนใช้งานฟีเจอร์ "ครูใบ้อัจฉริยะ" และ "เสกภาพพื้นหลัง AI" ได้</p>
+                </div>
+                
+                <div class="mt-4 space-y-4">
+                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-800">
+                        <i class="fa-solid fa-circle-info mr-1"></i> <strong>ข้อชี้แนะ:</strong> คีย์ที่คุณครูกรอกจะถูกจัดเก็บไว้ภายในเครื่องนี้อย่างปลอดภัยผ่านเบราว์เซอร์ ไม่มีความเสี่ยงที่คีย์จะรั่วไหลออกสู่สาธารณะเมื่อปล่อยเว็บออนไลน์ครับ (รองรับ Gemini API Key)
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-bold text-sm mb-1"><i class="fa-solid fa-key text-indigo-500"></i> กรอก Gemini API Key:</label>
+                        <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border-2 border-indigo-200 focus:outline-none focus:border-indigo-500 font-mono text-sm">
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="saveApiKey()" class="flex-grow bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-sm shadow transition">
+                            <i class="fa-solid fa-circle-check"></i> บันทึกกุญแจ
+                        </button>
+                        <button onclick="clearApiKey()" class="bg-rose-100 text-rose-700 hover:bg-rose-200 font-bold py-2.5 px-4 rounded-xl text-sm transition">
+                            ลบกุญแจออก
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-center text-slate-400">สามารถรับคีย์การใช้งานฟรีได้ที่ <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-500 underline font-semibold">Google AI Studio</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MAIN VIEWS CONTAINER ================= -->
+        <div class="flex-grow flex flex-col md:flex-row relative">
+
+            <!-- LEFT BOX: ALWAYS DISPLAY INTERACTIVE LOBOX -->
+            <div id="lobox-avatar-sidebar" class="w-full md:w-2/5 bg-gradient-to-b from-sky-50 to-blue-100 p-6 flex flex-col items-center justify-center border-b-4 md:border-b-0 md:border-r-4 border-sky-200 min-h-[250px] relative">
+                
+                <!-- Floating background elements -->
+                <div class="absolute inset-0 overflow-hidden opacity-10 pointer-events-none">
+                    <i class="fa-solid fa-atom text-blue-800 text-6xl absolute top-5 left-5"></i>
+                    <i class="fa-solid fa-calculator text-blue-800 text-6xl absolute bottom-10 right-5"></i>
+                    <i class="fa-solid fa-puzzle-piece text-blue-800 text-5xl absolute top-1/2 right-10"></i>
+                </div>
+
+                <!-- Speech Bubble -->
+                <div id="lobox-speech" class="bg-white text-gray-700 border-2 border-sky-400 rounded-2xl p-3 mb-4 text-center max-w-[220px] shadow relative text-sm font-semibold transition-all duration-300 transform scale-100">
+                    สวัสดีครับน้องๆ มาช่วยแต่งตัวผมกันนะ!
+                    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-[8px] w-4 h-4 bg-white border-r-2 border-b-2 border-sky-400 transform rotate-45"></div>
+                </div>
+
+                <!-- LOBOX VISUAL ROBOT COMPONENT -->
+                <div id="lobox-body-component" class="lobox-avatar-container w-[160px] h-[220px] relative transition-transform duration-300">
+                    
+                    <!-- AI Custom Background Backdrop -->
+                    <div id="slot-ai-backdrop" class="absolute -inset-4 rounded-3xl border-3 border-dashed border-pink-400 bg-cover bg-center overflow-hidden opacity-0 transition-all duration-300 pointer-events-none z-0">
+                        <div class="absolute inset-0 bg-white/20"></div>
+                    </div>
+
+                    <!-- Accessory Item Layer (Behind) -->
+                    <div id="slot-accessory" class="absolute -inset-8 flex items-center justify-center text-[70px] pointer-events-none z-10"></div>
+
+                    <!-- Antenna/Ears -->
+                    <div class="absolute top-[20px] left-1/2 -translate-x-1/2 w-4 h-8 bg-sky-400 rounded-full flex flex-col items-center">
+                        <div class="w-6 h-6 bg-yellow-400 rounded-full border-2 border-white animate-pulse"></div>
+                    </div>
+
+                    <!-- Head -->
+                    <div class="absolute top-[40px] left-1/2 -translate-x-1/2 w-28 h-20 bg-gradient-to-r from-blue-300 to-sky-400 rounded-2xl border-4 border-slate-700 shadow flex items-center justify-center gap-4 overflow-hidden z-10">
+                        <!-- Screen Face -->
+                        <div class="w-[90%] h-[80%] bg-slate-800 rounded-xl flex items-center justify-center gap-4 relative">
+                            <!-- Left Eye -->
+                            <div class="w-6 h-6 bg-cyan-300 rounded-full glowing-eye flex items-center justify-center">
+                                <div class="w-2 h-2 bg-slate-900 rounded-full"></div>
+                            </div>
+                            <!-- Right Eye -->
+                            <div class="w-6 h-6 bg-cyan-300 rounded-full glowing-eye flex items-center justify-center">
+                                <div class="w-2 h-2 bg-slate-900 rounded-full"></div>
+                            </div>
+                            <!-- Blush cheeks -->
+                            <div class="absolute bottom-1 left-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60"></div>
+                            <div class="absolute bottom-1 right-2 w-3 h-1.5 bg-rose-400 rounded-full opacity-60"></div>
+                        </div>
+                    </div>
+
+                    <!-- Glasses Item Layer -->
+                    <div id="slot-glasses" class="absolute top-[52px] left-1/2 -translate-x-1/2 text-5xl pointer-events-none z-20"></div>
+
+                    <!-- Hat Item Layer -->
+                    <div id="slot-hat" class="absolute -top-[5px] left-1/2 -translate-x-1/2 text-6xl pointer-events-none z-20 drop-shadow-md"></div>
+
+                    <!-- Neck -->
+                    <div class="absolute top-[115px] left-1/2 -translate-x-1/2 w-8 h-4 bg-slate-400 border-x-4 border-slate-700 z-0"></div>
+
+                    <!-- Body -->
+                    <div class="absolute top-[125px] left-1/2 -translate-x-1/2 w-32 h-24 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-3xl border-4 border-slate-700 shadow z-10 flex flex-col items-center justify-center">
+                        <!-- Energy Core -->
+                        <div class="w-10 h-10 rounded-full bg-yellow-300 border-2 border-white flex items-center justify-center animate-pulse">
+                            <i class="fa-solid fa-bolt text-amber-600 text-lg"></i>
+                        </div>
+                    </div>
+
+                    <!-- Shirt/Armour Layer -->
+                    <div id="slot-shirt" class="absolute top-[125px] left-1/2 -translate-x-1/2 text-[45px] pointer-events-none z-20"></div>
+
+                    <!-- Left Arm -->
+                    <div class="absolute top-[140px] left-1 w-6 h-14 bg-slate-300 border-2 border-slate-700 rounded-full origin-top rotate-[25deg] z-0"></div>
+                    <!-- Right Arm -->
+                    <div class="absolute top-[140px] right-1 w-6 h-14 bg-slate-300 border-2 border-slate-700 rounded-full origin-top -rotate-[25deg] z-0"></div>
+
+                    <!-- Left Leg -->
+                    <div class="absolute bottom-0 left-8 w-6 h-10 bg-slate-400 border-2 border-slate-700 rounded-b-lg z-0"></div>
+                    <!-- Right Leg -->
+                    <div class="absolute bottom-0 right-8 w-6 h-10 bg-slate-400 border-2 border-slate-700 rounded-b-lg z-0"></div>
+
+                    <!-- Shoes Layer -->
+                    <div id="slot-shoes" class="absolute bottom-[-15px] left-1/2 -translate-x-1/2 w-full flex justify-center gap-4 text-4xl pointer-events-none z-20"></div>
+                </div>
+
+                <!-- Action Button under Lobox -->
+                <div class="mt-4 flex gap-2">
+                    <button id="tts-speak-btn" onclick="speakSpeechBubble()" class="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 w-10 h-10 flex items-center justify-center shadow" title="ฟังเสียงโลบ็อก">
+                        <i id="tts-icon" class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <button onclick="loboxCheer()" class="bg-pink-500 hover:bg-pink-600 text-white rounded-full p-2 w-10 h-10 flex items-center justify-center shadow" title="ทักทาย">
+                        <i class="fa-solid fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT BOX: INTERACTIVE VIEWS -->
+            <div class="w-full md:w-3/5 p-4 md:p-8 flex flex-col justify-start">
+                
+                <!-- VIEW 1: HOME SCREEN / NAME ENTRY -->
+                <div id="view-home" class="flex flex-col h-full justify-between gap-6">
+                    <div class="text-center md:text-left">
+                        <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-xs">ตัวชี้วัด ค 1.1 ป.2/4</span>
+                        <h2 class="text-3xl font-extrabold text-slate-800 mt-2">ตามหาปริศนาตัวเลข<br><span class="text-sky-500">ช่วยแต่งตัวให้โลบ็อกกัน!</span></h2>
+                        <p class="text-slate-600 mt-2 text-sm leading-relaxed">
+                            สนุกไปกับการเรียนรู้วิธีหาค่าของตัวไม่ทราบค่าในการบวกและการลบ ไม่เกิน 1,000 สะสมเหรียญเพื่อปลดล็อกไอเทมแต่งตัวสุดล้ำ!
+                        </p>
+                    </div>
+
+                    <!-- Name Entry Area -->
+                    <div class="bg-sky-50 p-4 rounded-2xl border-2 border-sky-200">
+                        <label class="block text-slate-700 font-bold mb-1"><i class="fa-solid fa-id-card-clip mr-1 text-sky-500"></i> เขียนชื่อเล่นของตัวเองก่อนเล่นนะ:</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="username-input" placeholder="พิมพ์ชื่อเล่นตรงนี้เลย..." class="flex-grow p-3 text-lg rounded-xl border-2 border-sky-300 focus:outline-none focus:border-indigo-500 text-center font-bold" maxlength="15">
+                            <button onclick="saveName()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold transition">บันทึก</button>
+                        </div>
+                        <div id="saved-name-status" class="text-emerald-600 text-xs mt-1 font-semibold hidden">
+                            <i class="fa-solid fa-circle-check"></i> บันทึกข้อมูลเรียบร้อยแล้วจ้า!
+                        </div>
+                    </div>
+
+                    <!-- Main Actions -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onclick="changeView('view-levels')" class="bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white p-4 rounded-2xl text-xl font-bold shadow-lg transform hover:-translate-y-1 transition flex flex-col items-center gap-1">
+                            <span><i class="fa-solid fa-gamepad text-2xl mb-1"></i> เริ่มตะลุยด่าน</span>
+                            <span class="text-xs text-emerald-100 font-normal">ตอบคำถามสะสมเหรียญและดาว</span>
+                        </button>
+                        <button onclick="changeView('view-closet')" class="bg-gradient-to-r from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600 text-white p-4 rounded-2xl text-xl font-bold shadow-lg transform hover:-translate-y-1 transition flex flex-col items-center gap-1">
+                            <span><i class="fa-solid fa-shirt text-2xl mb-1"></i> ตู้เสื้อผ้าโลบ็อก</span>
+                            <span class="text-xs text-purple-100 font-normal">แต่งตัวและปลดล็อกชุดเจ๋งๆ</span>
+                        </button>
+                    </div>
+
+                    <!-- Endless Mode Banner -->
+                    <div class="bg-gradient-to-r from-pink-400 to-purple-500 p-4 rounded-2xl text-white shadow-md flex justify-between items-center transform hover:scale-[1.01] transition">
+                        <div>
+                            <h3 class="font-bold text-lg"><i class="fa-solid fa-rocket animate-pulse mr-1"></i> โหมดผจญภัยอวกาศไร้สิ้นสุด</h3>
+                            <p class="text-xs text-pink-100">ตอบสนุกเก็บเหรียญสะสมชุดอย่างรวดเร็วได้ไม่มีหยุดพัก!</p>
+                        </div>
+                        <button onclick="startEndlessMode()" class="bg-white text-purple-700 font-bold px-4 py-2 rounded-xl text-sm shadow hover:bg-pink-50 transition shrink-0">
+                            ออกตัวพุ่งชน! 🚀
+                        </button>
+                    </div>
+
+                    <!-- Local Leaderboard Showcase -->
+                    <div class="border-t-2 border-slate-100 pt-4">
+                        <h3 class="text-md font-bold text-slate-700 mb-2"><i class="fa-solid fa-trophy text-yellow-500 mr-1"></i> ตารางอันดับพลังงาน (Top 3)</h3>
+                        <div id="mini-leaderboard" class="space-y-2 text-sm">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: LEVEL SELECTION -->
+                <div id="view-levels" class="hidden flex flex-col h-full gap-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-compass text-sky-500 mr-2"></i> เลือกด่านเพื่อเรียนรู้</h2>
+                        <button onclick="changeView('view-home')" class="text-sm bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold hover:bg-slate-300">
+                            <i class="fa-solid fa-arrow-left"></i> กลับหน้าแรก
+                        </button>
+                    </div>
+
+                    <!-- Mode Toggle (Practice vs Challenge) -->
+                    <div class="bg-sky-100/50 p-2 rounded-xl flex gap-2">
+                        <button id="mode-practice" onclick="setGameMode('practice')" class="flex-1 py-2 text-center rounded-lg font-bold text-sm bg-white text-sky-600 shadow">
+                            <i class="fa-solid fa-heart mr-1"></i> โหมดฝึกซ้อม (ไม่จับเวลา)
+                        </button>
+                        <button id="mode-challenge" onclick="setGameMode('challenge')" class="flex-1 py-2 text-center rounded-lg font-bold text-sm text-slate-600 hover:bg-white/40">
+                            <i class="fa-solid fa-hourglass-start mr-1"></i> โหมดท้าทาย (จับเวลาแบบง่าย)
+                        </button>
+                    </div>
+
+                    <!-- Level List Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-grow overflow-y-auto max-h-[360px] p-1">
+                        
+                        <!-- Level 1 Card -->
+                        <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 hover:border-amber-400 transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-semibold">ด่านที่ 1</span>
+                                    <span id="level-1-stars" class="text-yellow-500 text-sm">⭐⭐⭐</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-lg mt-1">ตัวไม่ทราบค่าในการบวก</h3>
+                                <p class="text-xs text-slate-600 mt-1">หาค่าของ [ ] ในโจทย์แบบ $25 + [ ] = 60$</p>
+                            </div>
+                            <button onclick="startLevel(1)" class="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-xl text-sm transition shadow">
+                                ลุยกันเลย!
+                            </button>
+                        </div>
+
+                        <!-- Level 2 Card -->
+                        <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 hover:border-emerald-400 transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">ด่านที่ 2</span>
+                                    <span id="level-2-stars" class="text-yellow-500 text-sm">⭐⭐⭐</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-lg mt-1">ตัวไม่ทราบค่าในการลบ</h3>
+                                <p class="text-xs text-slate-600 mt-1">หาค่าของ [ ] ในโจทย์แบบ $90 - [ ] = 45$</p>
+                            </div>
+                            <button onclick="startLevel(2)" class="w-full mt-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-sm transition shadow">
+                                ลุยกันเลย!
+                            </button>
+                        </div>
+
+                        <!-- Level 3 Card -->
+                        <div class="bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 hover:border-purple-400 transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-semibold">ด่านที่ 3</span>
+                                    <span id="level-3-stars" class="text-yellow-500 text-sm">⭐⭐⭐</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-lg mt-1">ตัวไม่ทราบค่าอยู่หน้าสุด</h3>
+                                <p class="text-xs text-slate-600 mt-1">หาค่าของ [ ] ในโจทย์แบบ $[ ] + 120 = 300$</p>
+                            </div>
+                            <button onclick="startLevel(3)" class="w-full mt-3 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-xl text-sm transition shadow">
+                                ลุยกันเลย! (ด่านพิมพ์ตอบ)
+                            </button>
+                        </div>
+
+                        <!-- Level 4 Card -->
+                        <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 hover:border-rose-400 transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs bg-rose-200 text-rose-800 px-2 py-0.5 rounded-full font-semibold">ด่านที่ 4</span>
+                                    <span id="level-4-stars" class="text-yellow-500 text-sm">⭐⭐⭐</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-lg mt-1">โจทย์ผสมแสนมหาสนุก</h3>
+                                <p class="text-xs text-slate-600 mt-1">ท้าทายขั้นสุดกับการบวกและการลบไม่เกิน 1,000</p>
+                            </div>
+                            <button onclick="startLevel(4)" class="w-full mt-3 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 rounded-xl text-sm transition shadow">
+                                ท้าทายบอสใหญ่!
+                            </button>
+                        </div>
+
+                        <!-- Level 5 Card -->
+                        <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 hover:border-sky-400 transition flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs bg-sky-200 text-sky-800 px-2 py-0.5 rounded-full font-semibold">ด่านที่ 5</span>
+                                    <span id="level-5-stars" class="text-yellow-500 text-sm">⭐⭐⭐</span>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-lg mt-1">โจทย์ปัญหานิทานช่วยเพื่อน</h3>
+                                <p class="text-xs text-slate-600 mt-1">ประยุกต์ทักษะคณิตศาสตร์ผ่านเรื่องเล่าสุดแสนน่ารัก</p>
+                            </div>
+                            <button onclick="startLevel(5)" class="w-full mt-3 bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 rounded-xl text-sm transition shadow">
+                                ช่วยเหลือเพื่อนๆ! 🦊
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- VIEW 3: GAME PLAY AREA -->
+                <div id="view-gameplay" class="hidden flex flex-col h-full justify-between gap-4">
+                    
+                    <!-- Top Status Bar in Game -->
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span id="game-level-tag" class="bg-indigo-600 text-white font-bold px-3 py-1 rounded-xl text-sm">ด่านที่ 1</span>
+                            <span id="question-progress" class="text-slate-600 text-sm font-semibold">ข้อที่ 1/5</span>
+                        </div>
+                        
+                        <!-- Simple Timer for Challenge Mode -->
+                        <div id="timer-container" class="bg-rose-100 text-rose-700 px-3 py-1 rounded-xl flex items-center gap-2 text-sm font-bold opacity-0 transition-opacity">
+                            <i class="fa-solid fa-clock animate-pulse"></i>
+                            <span id="timer-display">30</span> วินาที
+                        </div>
+
+                        <button onclick="exitGamePrompt()" class="text-sm bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-200 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-door-open text-amber-500"></i>ออก
+                        </button>
+                    </div>
+
+                    <!-- Visual Fuel/Battery Indicator (Concept help) -->
+                    <div class="bg-sky-50 border-2 border-sky-100 p-2.5 rounded-2xl flex items-center gap-4 shadow-inner">
+                        <div class="w-12 h-6 bg-slate-200 rounded border-2 border-slate-400 relative overflow-hidden flex items-center p-0.5 flex-shrink-0">
+                            <div id="visual-battery-level" class="h-full bg-gradient-to-r from-amber-400 to-emerald-500 rounded-sm" style="width: 60%"></div>
+                            <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-800">พลังงาน</div>
+                        </div>
+                        <p id="visual-aid-helper-text" class="text-xs text-slate-600 leading-tight">
+                            "กล่องพลังงานกำลังหาค่าความสมดุล ลองคำนวณสิ!"
+                        </p>
+                    </div>
+
+                    <!-- THE MATHEMATICS QUESTION CONTAINER -->
+                    <div class="bg-gradient-to-r from-indigo-50 to-sky-50 p-6 rounded-3xl border-4 border-indigo-200 text-center shadow relative min-h-[120px] flex flex-col justify-center items-center">
+                        <!-- Play Equation Audio Button -->
+                        <button onclick="speakCurrentQuestion()" class="absolute right-4 top-4 text-indigo-500 hover:text-indigo-600 text-lg" title="ฟังเสียงอ่านโจทย์">
+                            <i class="fa-solid fa-volume-high animate-bounce"></i>
+                        </button>
+                        
+                        <!-- Math Equation Display with proper Grade 2 sizing -->
+                        <div id="math-equation-display" class="text-4xl md:text-5xl font-black text-indigo-900 tracking-wide flex justify-center items-center gap-2">
+                            <span>25</span> <span>+</span> <span class="bg-white border-4 border-dashed border-sky-400 px-4 py-2 rounded-xl text-sky-500 inline-block min-w-[70px] shadow-sm">?</span> <span>=</span> <span>60</span>
+                        </div>
+                    </div>
+
+                    <!-- RESPONSE AREA (Choices or Text-Input Keypad) -->
+                    <div>
+                        <!-- Option A: Multiple Choices -->
+                        <div id="input-choices-container" class="grid grid-cols-2 gap-4">
+                            <!-- Dynamically generated buttons -->
+                        </div>
+
+                        <!-- Option B: Custom Keypad for typed input -->
+                        <div id="input-keypad-container" class="hidden bg-slate-100 p-3 rounded-2xl border-2 border-slate-200">
+                            <div class="flex gap-2 mb-3">
+                                <input type="number" id="typed-answer-input" placeholder="ใส่คำตอบของคุณ..." class="flex-grow p-3 text-2xl font-black text-center rounded-xl border-2 border-slate-300 focus:outline-none" readonly>
+                                <button onclick="submitTypedAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 font-bold text-lg rounded-xl shadow-md">ส่งคำตอบ</button>
+                            </div>
+                            <!-- Cute on-screen keypad -->
+                            <div class="grid grid-cols-5 gap-2">
+                                <button onclick="pressKey('1')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">1</button>
+                                <button onclick="pressKey('2')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">2</button>
+                                <button onclick="pressKey('3')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">3</button>
+                                <button onclick="pressKey('4')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">4</button>
+                                <button onclick="pressKey('5')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">5</button>
+                                <button onclick="pressKey('6')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">6</button>
+                                <button onclick="pressKey('7')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">7</button>
+                                <button onclick="pressKey('8')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">8</button>
+                                <button onclick="pressKey('9')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">9</button>
+                                <button onclick="pressKey('0')" class="bg-white p-3 rounded-xl font-bold text-xl text-slate-700 shadow active:bg-sky-100">0</button>
+                                <button onclick="pressKey('clear')" class="col-span-2 bg-rose-100 text-rose-700 p-3 rounded-xl font-bold shadow active:bg-rose-200">ล้าง</button>
+                                <button onclick="pressKey('back')" class="col-span-3 bg-amber-100 text-amber-700 p-3 rounded-xl font-bold shadow active:bg-amber-200"><i class="fa-solid fa-delete-left"></i> ลบ</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MULTI-LEVEL HINTS SYSTEM -->
+                    <div class="border-t-2 border-slate-100 pt-3">
+                        <div class="flex justify-between items-center gap-2">
+                            <span class="text-xs text-slate-500 font-semibold"><i class="fa-solid fa-circle-question mr-1"></i> คำแนะนำคิดเลขเร็ว:</span>
+                            <div class="flex gap-1 flex-wrap">
+                                <button onclick="getHint(1)" id="hint-btn-1" class="bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-xs font-semibold hover:bg-sky-200">1. คิดย้อนกลับ</button>
+                                <button onclick="getHint(2)" id="hint-btn-2" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold hover:bg-amber-200">2. บอกวิธีทำ</button>
+                                <button onclick="getHint(3)" id="hint-btn-3" class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold hover:bg-red-200">3. เฉลยอธิบาย</button>
+                                <button onclick="askAICoach()" id="ai-coach-btn" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md transition-all animate-pulse">
+                                    <i class="fa-solid fa-brain"></i> 🧠 ครู AI ใบ้ด่วน
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Active Hint Display Box -->
+                        <div id="hint-box-display" class="hidden mt-2 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-3 rounded-xl text-xs text-amber-900 leading-relaxed transition-all relative">
+                            <span id="active-hint-text">เลือกกดปุ่มคำใบ้ด้านบนได้เลยนะครับน้องๆ!</span>
+                            <button onclick="speakHint()" class="absolute right-2 top-2 text-amber-600 hover:text-amber-800" title="ฟังเสียงคำใบ้">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: SUMMARIZATION AND STAR AWARDS -->
+                <div id="view-summary" class="hidden flex flex-col h-full justify-between text-center gap-6">
+                    <div>
+                        <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto border-4 border-yellow-400 text-yellow-500 animate-bounce mb-3">
+                            <i class="fa-solid fa-trophy text-5xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-extrabold text-slate-800">สุดยอดฝีมือคณิตศาสตร์!</h2>
+                        <p class="text-slate-600 mt-1">น้องๆ เก่งคณิตคิดเร็วมากเลยครับ โลบ็อกประทับใจสุดๆ</p>
+                    </div>
+
+                    <!-- Stars & Energy Coins feedback details -->
+                    <div class="bg-indigo-50 border-2 border-indigo-200 p-6 rounded-2xl max-w-md mx-auto w-full">
+                        <div id="summary-stars-display" class="text-4xl mb-3">⭐⭐⭐</div>
+                        <div class="grid grid-cols-2 gap-4 text-center mt-2">
+                            <div class="bg-white p-3 rounded-xl border border-indigo-100">
+                                <p class="text-xs text-slate-500">ตอบถูกทั้งหมด</p>
+                                <p id="summary-correct-count" class="text-2xl font-black text-indigo-700">5 / 5 ข้อ</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl border border-indigo-100">
+                                <p class="text-xs text-slate-500">เหรียญพลังงานที่ได้</p>
+                                <p id="summary-coins-earned" class="text-2xl font-black text-amber-600">+50 💰</p>
+                            </div>
+                        </div>
+                        <p id="summary-cheer-text" class="text-sm text-indigo-900 font-semibold mt-3">"ยินดีด้วย! น้องได้รับไอเทมพิเศษปลดล็อกแล้วจ้า เข้าไปแต่งตัวให้โลบ็อกกันเถอะ!"</p>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button onclick="changeView('view-closet')" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition">
+                            <i class="fa-solid fa-shirt mr-1"></i> ไปตู้เสื้อผ้าเลย!
+                        </button>
+                        <button onclick="changeView('view-levels')" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition">
+                            <i class="fa-solid fa-gamepad mr-1"></i> เล่นด่านต่อไป
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: LOBOX DRESS-UP CLOSET -->
+                <div id="view-closet" class="hidden flex flex-col h-full justify-between gap-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-shirt text-purple-500 mr-2"></i> ตู้เสื้อผ้าจำลอง</h2>
+                        <button onclick="changeView('view-home')" class="text-sm bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold hover:bg-slate-300">
+                            <i class="fa-solid fa-check mr-1"></i> เสร็จสิ้น
+                        </button>
+                    </div>
+
+                    <!-- Category Tab Switcher -->
+                    <div class="flex gap-1 overflow-x-auto pb-1 border-b border-slate-100">
+                        <button onclick="switchClosetTab('hat')" class="closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs bg-purple-100 text-purple-700" data-category="hat">หมวก</button>
+                        <button onclick="switchClosetTab('glasses')" class="closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs text-slate-600 hover:bg-slate-100" data-category="glasses">แว่นตา</button>
+                        <button onclick="switchClosetTab('shirt')" class="closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs text-slate-600 hover:bg-slate-100" data-category="shirt">เสื้อผ้า</button>
+                        <button onclick="switchClosetTab('shoes')" class="closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs text-slate-600 hover:bg-slate-100" data-category="shoes">รองเท้า</button>
+                        <button onclick="switchClosetTab('accessory')" class="closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs text-slate-600 hover:bg-slate-100" data-category="accessory">อุปกรณ์</button>
+                        <button onclick="switchClosetTab('ai_custom')" class="closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs text-pink-600 hover:bg-pink-50 border border-pink-200" data-category="ai_custom">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-0.5 animate-pulse"></i> ฉากวิเศษ AI
+                        </button>
+                    </div>
+
+                    <!-- Wardrobe Item Grid -->
+                    <div id="closet-items-grid" class="grid grid-cols-3 gap-3 flex-grow overflow-y-auto max-h-[300px] p-1">
+                        <!-- Dynamically populated items inside JavaScript -->
+                    </div>
+
+                    <!-- Dressing controls -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="randomizeOutfit()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow transition">
+                            <i class="fa-solid fa-shuffle mr-1"></i> สุ่มชุดเก๋ๆ
+                        </button>
+                        <button onclick="unequipAll()" class="bg-slate-400 hover:bg-slate-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow transition">
+                            <i class="fa-solid fa-trash-can mr-1"></i> ถอดทั้งหมด
+                        </button>
+                        <button onclick="saveLook()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow transition">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> บันทึกลุคนี้!
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT GAME LOGIC ================= -->
+    <script>
+        // --- 1. GAME DATA & ITEMS CONFIGURATION ---
+        const ITEMS_DATABASE = {
+            hat: [
+                { id: 'hat_none', label: 'ไม่มี', emoji: '', price: 0, unlocked: true },
+                { id: 'hat_wizard', label: 'หมวกพ่อมด', emoji: '🎩', price: 20, unlocked: false },
+                { id: 'hat_cowboy', label: 'หมวกคาวบอย', emoji: '🤠', price: 30, unlocked: false },
+                { id: 'hat_crown', label: 'มงกุฎราชา', emoji: '👑', price: 50, unlocked: false },
+                { id: 'hat_cat', label: 'หูแมวโมเอะ', emoji: '🐱', price: 15, unlocked: true },
+                { id: 'hat_chef', label: 'หมวกเชฟ', emoji: '👨‍🍳', price: 25, unlocked: false }
+            ],
+            glasses: [
+                { id: 'glasses_none', label: 'ไม่มี', emoji: '', price: 0, unlocked: true },
+                { id: 'glasses_cool', label: 'แว่นกันแดดสุดเท่', emoji: '🕶️', price: 20, unlocked: false },
+                { id: 'glasses_nerd', label: 'แว่นหนาเรียนเก่ง', emoji: '👓', price: 10, unlocked: true },
+                { id: 'glasses_scifi', label: 'ไซไฟข้ามมิติ', emoji: '🥽', price: 40, unlocked: false }
+            ],
+            shirt: [
+                { id: 'shirt_none', label: 'ไม่มี', emoji: '', price: 0, unlocked: true },
+                { id: 'shirt_cape', label: 'ผ้าคลุมฮีโร่', emoji: '🦸‍♂️', price: 35, unlocked: false },
+                { id: 'shirt_suit', label: 'สูทนักเดินทาง', emoji: '👔', price: 25, unlocked: false },
+                { id: 'shirt_detective', label: 'นักสืบโคนัน', emoji: '🧥', price: 30, unlocked: false },
+                { id: 'shirt_heart', label: 'เกราะหัวใจ', emoji: '💖', price: 15, unlocked: true }
+            ],
+            shoes: [
+                { id: 'shoes_none', label: 'ไม่มี', emoji: '', price: 0, unlocked: true },
+                { id: 'shoes_rocket', label: 'ไอพ่นร็อคเก็ต', emoji: '🚀', price: 50, unlocked: false },
+                { id: 'shoes_skate', label: 'โรลเลอร์สเก็ต', emoji: '🛼', price: 20, unlocked: true },
+                { id: 'shoes_boots', label: 'บูทสีแดงหรู', emoji: '👢', price: 15, unlocked: false }
+            ],
+            accessory: [
+                { id: 'accessory_none', label: 'ไม่มี', emoji: '', price: 0, unlocked: true },
+                { id: 'accessory_wings', label: 'ปีกนางฟ้า', emoji: '🪶', price: 40, unlocked: false },
+                { id: 'accessory_headphones', label: 'หูฟังเกมเมอร์', emoji: '🎧', price: 25, unlocked: true },
+                { id: 'accessory_balloon', label: 'ลูกโป่งสวรรค์', emoji: '🎈', price: 15, unlocked: false }
+            ]
+        };
+
+        // Current Active States
+        let gameState = {
+            username: 'นักเรียน',
+            coins: 0,
+            activeLevel: 1,
+            isEndless: false, 
+            currentQuestionIndex: 0,
+            questions: [],
+            correctAnswers: 0,
+            gameMode: 'practice', 
+            timeLeft: 30,
+            timerInterval: null,
+            hintStep: 0,
+            currentQuestionObj: null,
+            equipped: {
+                hat: 'hat_none',
+                glasses: 'glasses_none',
+                shirt: 'shirt_none',
+                shoes: 'shoes_none',
+                accessory: 'accessory_none'
+            },
+            unlockedItems: ['hat_none', 'hat_cat', 'glasses_none', 'glasses_nerd', 'shirt_none', 'shirt_heart', 'shoes_none', 'shoes_skate', 'accessory_none', 'accessory_headphones'],
+            closetActiveTab: 'hat',
+            levelStars: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+            aiBackdropImg: '' 
+        };
+
+        let qteState = {
+            active: false,
+            count: 0,
+            target: 15,
+            timeLeft: 5,
+            interval: null,
+            successCallback: null,
+            failCallback: null
+        };
+
+        // Web Audio API synthesizers
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                    osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.3); // C6
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                } else if (type === 'wrong') {
+                    osc.frequency.setValueAtTime(220.00, audioCtx.currentTime); // A3
+                    osc.frequency.linearRampToValueAtTime(110.00, audioCtx.currentTime + 0.4); // A2
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.45);
+                } else if (type === 'click') {
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.05);
+                } else if (type === 'victory') {
+                    const melody = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                    melody.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+                        noteGain.gain.setValueAtTime(0.15, audioCtx.currentTime + idx * 0.08);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.08 + 0.6);
+                        noteOsc.start(audioCtx.currentTime + idx * 0.08);
+                        noteOsc.stop(audioCtx.currentTime + idx * 0.08 + 0.6);
+                    });
+                } else if (type === 'qte_tick') {
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.08);
+                } else if (type === 'qte_success') {
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12); // A5
+                    osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.24); // D6
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.6);
+                }
+            } catch (e) {
+                console.log("Audio awaiting user interaction.", e);
+            }
+        }
+
+        // --- 2. LOCAL SYSTEM INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSavedData();
+            updateLoboxDisplay();
+            refreshLeaderboard();
+            populateClosetItems();
+            
+            setTimeout(() => {
+                setSpeechBubble("ยินดีต้อนรับครับน้องๆ! มาเล่นเกมคณิตศาสตร์แสนสนุกกันเถอะ!");
+            }, 1000);
+        });
+
+        // Load data from LocalStorage
+        function loadSavedData() {
+            const savedState = localStorage.getItem('lobox_math_game_state_v1');
+            if (savedState) {
+                try {
+                    const parsed = JSON.parse(savedState);
+                    gameState.username = parsed.username || 'นักเรียน';
+                    gameState.coins = parsed.coins || 0;
+                    gameState.equipped = parsed.equipped || gameState.equipped;
+                    gameState.unlockedItems = parsed.unlockedItems || gameState.unlockedItems;
+                    gameState.levelStars = parsed.levelStars || gameState.levelStars;
+                    gameState.aiBackdropImg = parsed.aiBackdropImg || '';
+                    
+                    document.getElementById('username-input').value = gameState.username;
+                    document.getElementById('current-username').innerText = gameState.username;
+                    document.getElementById('active-user-display').classList.remove('hidden');
+                } catch(e) {
+                    console.error("Failed to parse data, resetting.", e);
+                }
+            }
+            updatePointsUI();
+            updateLevelStarsUI();
+        }
+
+        // Save state to LocalStorage
+        function saveProgress() {
+            localStorage.setItem('lobox_math_game_state_v1', JSON.stringify({
+                username: gameState.username,
+                coins: gameState.coins,
+                equipped: gameState.equipped,
+                unlockedItems: gameState.unlockedItems,
+                levelStars: gameState.levelStars,
+                aiBackdropImg: gameState.aiBackdropImg
+            }));
+            updatePointsUI();
+        }
+
+        function updatePointsUI() {
+            document.getElementById('player-coins').innerText = gameState.coins;
+        }
+
+        function updateLevelStarsUI() {
+            for (let i = 1; i <= 5; i++) {
+                const starsCount = gameState.levelStars[i] || 0;
+                let starStr = '';
+                for (let s = 0; s < 3; s++) {
+                    starStr += s < starsCount ? '⭐' : '☆';
+                }
+                const element = document.getElementById(`level-${i}-stars`);
+                if (element) element.innerText = starStr;
+            }
+        }
+
+        // --- 3. DRESS-UP SYSTEM LOGIC ---
+        function updateLoboxDisplay() {
+            const slots = ['hat', 'glasses', 'shirt', 'shoes', 'accessory'];
+            slots.forEach(slot => {
+                const itemId = gameState.equipped[slot];
+                const itemObj = ITEMS_DATABASE[slot].find(i => i.id === itemId);
+                const container = document.getElementById(`slot-${slot}`);
+                if (container) {
+                    if (itemObj && itemObj.emoji) {
+                        if (slot === 'shoes') {
+                            container.innerHTML = `<span>${itemObj.emoji}</span><span>${itemObj.emoji}</span>`;
+                        } else {
+                            container.innerHTML = itemObj.emoji;
+                        }
+                    } else {
+                        container.innerHTML = '';
+                    }
+                }
+            });
+
+            const aiBackdrop = document.getElementById('slot-ai-backdrop');
+            if (aiBackdrop) {
+                if (gameState.aiBackdropImg) {
+                    aiBackdrop.style.backgroundImage = `url('${gameState.aiBackdropImg}')`;
+                    aiBackdrop.style.opacity = '1';
+                    aiBackdrop.classList.add('ai-active-border');
+                } else {
+                    aiBackdrop.style.backgroundImage = 'none';
+                    aiBackdrop.style.opacity = '0';
+                    aiBackdrop.classList.remove('ai-active-border');
+                }
+            }
+        }
+
+        // --- FIXED EXIT LOGIC ---
+        function exitGamePrompt() {
+            playSound('click');
+            const descText = document.getElementById('exit-modal-desc');
+            if (gameState.isEndless) {
+                descText.innerText = "ระบบจะบันทึกเหรียญที่คุณสะสมได้ทั้งหมดให้อย่างปลอดภัยครับ!";
+            } else {
+                descText.innerText = "คะแนนสะสมในการเล่นด่านรอบนี้จะยังไม่ถูกบันทึกนะจ๊ะเด็ก ๆ";
+            }
+            document.getElementById('exit-modal').classList.remove('hidden');
+        }
+
+        function closeExitModal() {
+            playSound('click');
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+
+        function executeExitGame() {
+            playSound('click');
+            document.getElementById('exit-modal').classList.add('hidden');
+            clearInterval(gameState.timerInterval);
+            
+            if (gameState.isEndless) {
+                gameState.isEndless = false;
+                changeView('view-home');
+            } else {
+                changeView('view-levels');
+            }
+        }
+
+        function switchClosetTab(tabName) {
+            playSound('click');
+            gameState.closetActiveTab = tabName;
+            
+            document.querySelectorAll('.closet-tab-btn').forEach(btn => {
+                if (btn.getAttribute('data-category') === tabName) {
+                    btn.className = "closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs bg-purple-500 text-white shadow";
+                } else {
+                    btn.className = "closet-tab-btn px-3 py-1.5 rounded-lg font-bold text-xs text-slate-600 hover:bg-slate-100";
+                }
+            });
+            populateClosetItems();
+        }
+
+        function populateClosetItems() {
+            const grid = document.getElementById('closet-items-grid');
+            grid.innerHTML = '';
+            
+            const category = gameState.closetActiveTab;
+
+            if (category === 'ai_custom') {
+                grid.className = "col-span-3 flex flex-col gap-3 p-4 bg-indigo-50 border-2 border-indigo-200 rounded-2xl max-h-[300px] overflow-y-auto";
+                grid.innerHTML = `
+                    <div class="flex flex-col gap-2 w-full">
+                        <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-800">
+                            <i class="fa-solid fa-wand-magic-sparkles text-pink-500 animate-pulse"></i> 
+                            <span>พลังวิเศษของ AI วาดฉากแต่งตัวในฝัน!</span>
+                        </div>
+                        <p class="text-[10px] text-indigo-600 leading-relaxed">
+                            พิมพ์ไอเดียฉากหลังที่อยากสร้างให้โลบ็อกเป็นภาษาไทย แล้วกดเสกได้เลยจ้า! (ตัวอย่าง: โลบ็อกบินอยู่ในอวกาศสีชมพู)
+                        </p>
+                        <div class="flex gap-2">
+                            <input type="text" id="ai-costume-prompt" placeholder="พิมพ์ไอเดียแสนสนุกตรงนี้เลย..." class="flex-grow p-2 text-xs rounded-lg border-2 border-indigo-300 focus:outline-none focus:border-indigo-500 font-semibold" max-length="100">
+                            <button onclick="generateAICostume()" id="ai-generate-btn" class="bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white px-3 py-1.5 text-xs font-bold rounded-lg shadow-md transition-all shrink-0">
+                                เสกชุด! 🪄
+                            </button>
+                        </div>
+                        
+                        <!-- AI Generated Preview Panel -->
+                        <div id="ai-costume-preview-container" class="hidden mt-2 border-t border-indigo-200 pt-3 text-center">
+                            <p class="text-[10px] font-bold text-slate-600 mb-1">✨ ภาพฉากวิเศษที่ AI ออกแบบให้น้องๆ :</p>
+                            <div class="relative w-[130px] h-[130px] border-4 border-white rounded-2xl shadow-md overflow-hidden mx-auto bg-slate-100">
+                                <img id="ai-costume-preview-img" class="w-full h-full object-cover" src="" alt="AI Outfit Preview">
+                                <div id="ai-loading-spinner" class="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-1 hidden">
+                                    <i class="fa-solid fa-spinner animate-spin text-pink-500 text-xl"></i>
+                                    <span class="text-[9px] font-bold text-indigo-800 animate-pulse">กำลังวาดสีวิเศษ...</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 mt-2 justify-center">
+                                <button onclick="equipAICostume()" id="ai-equip-btn" class="bg-emerald-500 hover:bg-emerald-600 text-white py-1 px-3 text-xs font-bold rounded-lg shadow transition">
+                                    👉 สวมใส่ฉากนี้!
+                                </button>
+                                <button onclick="deleteAICostume()" class="bg-red-100 hover:bg-red-200 text-red-700 py-1 px-3 text-xs font-bold rounded-lg transition">
+                                    <i class="fa-solid fa-trash"></i> ถอดฉากออก
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                if (gameState.aiBackdropImg) {
+                    document.getElementById('ai-costume-preview-container').classList.remove('hidden');
+                    document.getElementById('ai-costume-preview-img').src = gameState.aiBackdropImg;
+                }
+                return;
+            } else {
+                grid.className = "grid grid-cols-3 gap-3 flex-grow overflow-y-auto max-h-[300px] p-1";
+            }
+
+            const items = ITEMS_DATABASE[category];
+
+            items.forEach(item => {
+                const isUnlocked = gameState.unlockedItems.includes(item.id);
+                const isEquipped = gameState.equipped[category] === item.id;
+                
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-2xl border-2 flex flex-col justify-between items-center transition relative ${
+                    isEquipped ? 'border-purple-500 bg-purple-50' : 'border-slate-200 bg-white hover:border-slate-300'
+                }`;
+
+                let emojiHTML = `<div class="text-3xl my-2">${item.emoji || '❌'}</div>`;
+                
+                let badgeHTML = '';
+                if (!isUnlocked) {
+                    badgeHTML = `<span class="absolute top-1 right-1 text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded-full"><i class="fa-solid fa-lock text-amber-500"></i> ${item.price} 💰</span>`;
+                } else if (isEquipped) {
+                    badgeHTML = `<span class="absolute top-1 right-1 text-[10px] bg-purple-500 text-white font-bold px-1.5 py-0.5 rounded-full">ใส่อยู่</span>`;
+                }
+
+                card.innerHTML = `
+                    ${badgeHTML}
+                    ${emojiHTML}
+                    <p class="text-[11px] font-bold text-slate-700 text-center leading-tight mt-1 mb-2">${item.label}</p>
+                `;
+
+                const btn = document.createElement('button');
+                if (isUnlocked) {
+                    btn.className = `w-full text-[10px] font-bold py-1 px-2 rounded-lg transition ${
+                        isEquipped ? 'bg-purple-500 text-white' : 'bg-slate-100 hover:bg-purple-100 text-slate-700'
+                    }`;
+                    btn.innerText = isEquipped ? 'ถอดออก' : 'สวมใส่';
+                    btn.onclick = () => toggleEquip(category, item.id);
+                } else {
+                    btn.className = 'w-full text-[10px] font-bold py-1 px-2 rounded-lg bg-amber-400 hover:bg-amber-500 text-white transition';
+                    btn.innerText = 'ปลดล็อก';
+                    btn.onclick = () => buyItem(category, item.id, item.price);
+                }
+
+                card.appendChild(btn);
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleEquip(category, itemId) {
+            playSound('click');
+            if (gameState.equipped[category] === itemId) {
+                gameState.equipped[category] = `${category}_none`;
+                setSpeechBubble("ถอดชิ้นนี้ออกเรียบร้อยจ้า!");
+            } else {
+                gameState.equipped[category] = itemId;
+                const item = ITEMS_DATABASE[category].find(i => i.id === itemId);
+                setSpeechBubble(`ว้าว! ใส่ ${item.label} แล้วเท่สุดๆ ไปเลย!`);
+            }
+            updateLoboxDisplay();
+            saveProgress();
+            populateClosetItems();
+            loboxCheer();
+        }
+
+        function buyItem(category, itemId, price) {
+            if (gameState.coins >= price) {
+                playSound('victory');
+                gameState.coins -= price;
+                gameState.unlockedItems.push(itemId);
+                gameState.equipped[category] = itemId;
+                setSpeechBubble("ยินดีด้วย! ปลดล็อกและสวมใส่ไอเทมเรียบร้อย!");
+                updateLoboxDisplay();
+                saveProgress();
+                populateClosetItems();
+                loboxCheer();
+            } else {
+                playSound('wrong');
+                setSpeechBubble("อุ๊ย! เหรียญสะสมไม่พอครับ ลองไปลุยด่านเพื่อเก็บเหรียญเพิ่มดูนะ!");
+                loboxCheerNegative();
+            }
+        }
+
+        function randomizeOutfit() {
+            playSound('victory');
+            const categories = ['hat', 'glasses', 'shirt', 'shoes', 'accessory'];
+            categories.forEach(cat => {
+                const unlocked = ITEMS_DATABASE[cat].filter(item => gameState.unlockedItems.includes(item.id));
+                const randomItem = unlocked[Math.floor(Math.random() * unlocked.length)];
+                gameState.equipped[cat] = randomItem.id;
+            });
+            updateLoboxDisplay();
+            saveProgress();
+            populateClosetItems();
+            setSpeechBubble("ฮั่นแน่! สุ่มได้แฟชั่นสุดเท่เลยใช่ไหมจ๊ะ! 😂");
+            loboxCheer();
+        }
+
+        function unequipAll() {
+            playSound('click');
+            const categories = ['hat', 'glasses', 'shirt', 'shoes', 'accessory'];
+            categories.forEach(cat => {
+                gameState.equipped[cat] = `${cat}_none`;
+            });
+            updateLoboxDisplay();
+            saveProgress();
+            populateClosetItems();
+            setSpeechBubble("ฮิๆ ตัวผมเบาสบายเหมือนหุ่นยนต์ดั้งเดิมเลย!");
+        }
+
+        function saveLook() {
+            playSound('victory');
+            setSpeechBubble(`บันทึกลุคสุดหล่อของ "${gameState.username}" เรียบร้อยแล้วจ้า! น่ารักสุดๆ!`);
+            loboxCheer();
+            alert(`💾 บันทึกรูปแต่งตัวของ "${gameState.username}" เรียบร้อยแล้วจ้า! น่ารักสุดๆ!`);
+        }
+
+        // --- 4. NAVIGATION / VIEW CHANGER ---
+        function changeView(viewId) {
+            playSound('click');
+            
+            const views = ['view-home', 'view-levels', 'view-gameplay', 'view-summary', 'view-closet'];
+            views.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            
+            document.getElementById(viewId).classList.remove('hidden');
+
+            if (viewId === 'view-home') {
+                refreshLeaderboard();
+                setSpeechBubble(`ยินดีต้อนรับกลับมาครับคุณ ${gameState.username}! อยากเล่นโหมดไหนดีครับ?`);
+            } else if (viewId === 'view-closet') {
+                populateClosetItems();
+                setSpeechBubble("ยินดีต้อนรับสู่ตู้เสื้อผ้าของผมครับ ลองชิ้นไหนกดได้เลยนะ!");
+            }
+        }
+
+        function saveName() {
+            const input = document.getElementById('username-input').value.trim();
+            if (input) {
+                playSound('click');
+                gameState.username = input;
+                document.getElementById('current-username').innerText = input;
+                document.getElementById('active-user-display').classList.remove('hidden');
+                
+                const status = document.getElementById('saved-name-status');
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 2000);
+                
+                setSpeechBubble(`ยินดีที่ได้รู้จักครับน้อง ${input}! พร้อมลุยกันหรือยังครับ?`);
+                saveProgress();
+            } else {
+                alert("พิมพ์ชื่อเล่นของตัวเองก่อนนะจ๊ะเด็กดี 😊");
+            }
+        }
+
+        // --- 5. MATHEMATICS GAME ENGINE ---
+        function setGameMode(mode) {
+            playSound('click');
+            gameState.gameMode = mode;
+            
+            const pBtn = document.getElementById('mode-practice');
+            const cBtn = document.getElementById('mode-challenge');
+            
+            if (mode === 'practice') {
+                pBtn.className = "flex-1 py-2 text-center rounded-lg font-bold text-sm bg-white text-sky-600 shadow";
+                cBtn.className = "flex-1 py-2 text-center rounded-lg font-bold text-sm text-slate-600 hover:bg-white/40";
+                setSpeechBubble("โหมดฝึกซ้อม สบายๆ ไม่จับเวลา เหมาะกับการฝึกคิดแบบเข้าใจถ่องแท้จ้า");
+            } else {
+                cBtn.className = "flex-1 py-2 text-center rounded-lg font-bold text-sm bg-white text-rose-600 shadow";
+                pBtn.className = "flex-1 py-2 text-center rounded-lg font-bold text-sm text-slate-600 hover:bg-white/40";
+                setSpeechBubble("โหมดท้าทายตื่นเต้น มีเวลาจำกัด 30 วินาทีต่อข้อ คิดเร็วสุดปัง!");
+            }
+        }
+
+        function generateQuestions(level) {
+            let questions = [];
+            
+            for (let i = 0; i < 5; i++) {
+                let qObj = {};
+                if (level === 1) {
+                    const a = Math.floor(Math.random() * 50) + 1; 
+                    const ans = Math.floor(Math.random() * 40) + 5; 
+                    const b = a + ans;
+                    qObj = {
+                        expression: `${a} + <span>[ ? ]</span> = ${b}`,
+                        speakText: `${a} บวก อะไร เท่ากับ ${b}`,
+                        unknownPos: 'middle',
+                        numA: a,
+                        numB: b,
+                        op: '+',
+                        correct: ans,
+                        hints: [
+                            `ลองคิดย้อนกลับดูนะ: ผลรวมคือ ${b} มีอยู่แล้ว ${a} ขาดอีกเท่าไหร่ถึงจะได้เต็มกล่องนะ?`,
+                            `สลับเป็นโจทย์ลบหาค่าส่วนต่าง: ▢ = ${b} - ${a}`,
+                            `คำตอบคือ ${ans} เพราะเมื่อนำ ${b} หักออกด้วย ${a} จะได้คำตอบพอดีจ้า!`
+                        ]
+                    };
+                } else if (level === 2) {
+                    const a = Math.floor(Math.random() * 60) + 30; 
+                    const ans = Math.floor(Math.random() * (a - 10)) + 5; 
+                    const b = a - ans;
+                    qObj = {
+                        expression: `${a} - <span>[ ? ]</span> = ${b}`,
+                        speakText: `${a} ลบ อะไร เท่ากับ ${b}`,
+                        unknownPos: 'middle',
+                        numA: a,
+                        numB: b,
+                        op: '-',
+                        correct: ans,
+                        hints: [
+                            `ถ้าเรามีของอยู่ ${a} แล้วหักออกไปเท่าไหร่จึงจะเหลือเพียง ${b} ชิ้นนะ?`,
+                            `วิธีหาคำตอบคือเอาตัวตั้ง ${a} หักออกด้วยผลลัพธ์: ▢ = ${a} - ${b}`,
+                            `คำตอบคือ ${ans} ลองนำ ${a} มาลบออกด้วย ${b} ดูนะจะพบกับตัวเลขวิเศษนี้!`
+                        ]
+                    };
+                } else if (level === 3) {
+                    const isPlus = Math.random() > 0.5;
+                    if (isPlus) {
+                        const a = Math.floor(Math.random() * 150) + 50; 
+                        const ans = Math.floor(Math.random() * 150) + 50; 
+                        const b = ans + a;
+                        qObj = {
+                            expression: `<span>[ ? ]</span> + ${a} = ${b}`,
+                            speakText: `อะไร บวก ${a} เท่ากับ ${b}`,
+                            unknownPos: 'front',
+                            numA: a,
+                            numB: b,
+                            op: '+',
+                            correct: ans,
+                            hints: [
+                                `หาตัวเริ่มแรกที่เมื่อเอาไปรวมกับ ${a} แล้วได้คำตอบสุดท้ายเท่ากับ ${b}`,
+                                `เปลี่ยนการรวมร่างเป็นคำนวณถอยหลัง: ▢ = ${b} - ${a}`,
+                                `คำตอบคือ ${ans} เพื่อให้นำมารวมกับ ${a} แล้วสว่างเต็มถังพอดีครับ`
+                            ]
+                        };
+                    } else {
+                        const a = Math.floor(Math.random() * 100) + 50; 
+                        const ans = Math.floor(Math.random() * 150) + 50; 
+                        const b = ans - a;
+                        qObj = {
+                            expression: `<span>[ ? ]</span> - ${a} = ${ans}`,
+                            speakText: `อะไร ลบ ${a} เท่ากับ ${ans}`,
+                            unknownPos: 'front',
+                            numA: a,
+                            numB: ans,
+                            op: '-',
+                            correct: ans + a,
+                            hints: [
+                                `ตัวข้างหน้าโดนหักล้างออกไปตั้งเยอะ แต่ยังเหลือพลังงานอยู่ แสดงว่าของเริ่มต้นต้องก้อนใหญ่มากแน่นอน!`,
+                                `อยากได้ของเริ่มต้นที่โดนลบหายไปกลับคืนมา นำมารวมกันสิ: ▢ = ${ans} + ${a}`,
+                                `คำตอบคือ ${ans + a} การสลักบวกย้อนกลับคืนเป็นพลังให้ตัวตั้งต้นครับ!`
+                            ]
+                        };
+                    }
+                } else if (level === 4) {
+                    const randType = Math.floor(Math.random() * 3);
+                    if (randType === 0) {
+                        const ans = Math.floor(Math.random() * 900) + 100;
+                        qObj = {
+                            expression: `0 + <span>[ ? ]</span> = ${ans}`,
+                            speakText: `ศูนย์ บวก อะไร เท่ากับ ${ans}`,
+                            unknownPos: 'middle',
+                            numA: 0,
+                            numB: ans,
+                            op: '+',
+                            correct: ans,
+                            hints: [
+                                `เลขศูนย์ไม่มีค่าในการบวกพลังงาน ดังนั้นอะไรที่บวกกับศูนย์ก็จะได้เลขเดิมเสมอนะครับ!`,
+                                `โจทย์ข้อนี้แสนง่าย: ▢ = ${ans} - 0`,
+                                `คำตอบคือ ${ans} ไม่ต้องบวกลบอะไรซับซ้อนเลยจ้า!`
+                            ]
+                        };
+                    } else if (randType === 1) {
+                        const ans = Math.floor(Math.random() * 500) + 100;
+                        const b = 1000 - ans;
+                        qObj = {
+                            expression: `1,000 - <span>[ ? ]</span> = ${b}`,
+                            speakText: `หนึ่งพัน ลบ อะไร เท่ากับ ${b}`,
+                            unknownPos: 'middle',
+                            numA: 1000,
+                            numB: b,
+                            op: '-',
+                            correct: ans,
+                            hints: [
+                                `มีแบตเตอรี่เต็มกำลัง 1,000 หน่วย ปล่อยไอพ่นไปเท่าไหร่ถึงจะเหลือแบตเตอรี่เท่ากับ ${b} หน่วยนะ?`,
+                                `สลับโจทย์คิดเลขหลักสิบหลักร้อย: ▢ = 1,000 - ${b}`,
+                                `คำตอบคือ ${ans} ค่อยๆ คำนวณหลักหน่วย หลักสิบ และหลักร้อยย้อนหลังนะ`
+                            ]
+                        };
+                    } else {
+                        const a = Math.floor(Math.random() * 400) + 100;
+                        const ans = Math.floor(Math.random() * 400) + 100;
+                        const isAdd = Math.random() > 0.5;
+                        if (isAdd) {
+                            const b = a + ans;
+                            qObj = {
+                                expression: `${a} + <span>[ ? ]</span> = ${b}`,
+                                speakText: `${a} บวก อะไร เท่ากับ ${b}`,
+                                unknownPos: 'middle',
+                                numA: a,
+                                numB: b,
+                                op: '+',
+                                correct: ans,
+                                hints: [
+                                    `คิดกลับขั้ววิเคราะห์ นำยอดผลลัพธ์มาหักออกด้วยต้นทาง: ${b} ลบด้วย ${a}`,
+                                    `สูตรสลับทางคณิตศาสตร์เพื่อหาตัวไม่ทราบค่า: ▢ = ${b} - ${a}`,
+                                    `คำตอบคือ ${ans} ทดลองตั้งทดดูทีละหลักได้เลยนะครับคนเก่ง`
+                                ]
+                            };
+                        } else {
+                            const b = a + ans;
+                            qObj = {
+                                expression: `${b} - <span>[ ? ]</span> = ${a}`,
+                                speakText: `${b} ลบ อะไร เท่ากับ ${a}`,
+                                unknownPos: 'middle',
+                                numA: b,
+                                numB: a,
+                                op: '-',
+                                correct: ans,
+                                hints: [
+                                    `จากยอดพลังสูงสุด ${b} โดนพายุทรายลดระดับลงไปเท่าไหร่ ถึงเหลือพลังคงเหลือแค่ ${a}`,
+                                    `จัดสูตรคำนวณหักลบส่วนต่างง่ายๆ: ▢ = ${b} - ${a}`,
+                                    `คำตอบคือ ${ans} ค่อยๆ สลายตัวเลขออกจากโจทย์นะ`
+                                ]
+                            };
+                        }
+                    }
+                } else if (level === 5) {
+                    const stories = [
+                        {
+                            txt: "🦊 เจ้าจิ้งจอกมีสมุดอยู่ 45 เล่ม โลบ็อกให้อีกกี่เล่ม [?] ถึงจะมีรวม 100 เล่มพอดีครับ?",
+                            speak: "สุนัขจิ้งจอกมีสมุดสี่สิบห้าเล่ม โลบ็อกให้อีกกี่เล่มถึงจะมีสมุดร้อยเล่มพอดีครับ",
+                            op: "+", numA: 45, numB: 100, ans: 55,
+                            exp: "45 + <span>[ ? ]</span> = 100"
+                        },
+                        {
+                            txt: "🍩 โลบ็อกทำขนมคุกกี้ได้ 120 ชิ้น นำไปแจกเพื่อนๆ กี่ชิ้น [?] จึงจะเหลือขนม 80 ชิ้น?",
+                            speak: "โลบ็อกทำขนมคุกกี้ได้ร้อยยี่สิบชิ้น แจกเพื่อนไปกี่ชิ้นจึงจะเหลือขนมแปดสิบชิ้น",
+                            op: "-", numA: 120, numB: 80, ans: 40,
+                            exp: "120 - <span>[ ? ]</span> = 80"
+                        },
+                        {
+                            txt: "🚀 เดิมโลบ็อกมีพลังงานเท่าไหร่ไม่รู้ [?] แต่พอกระโดดหลบฝุ่นผงอวกาศเสียไป 50 พลังงาน จึงเหลือ 250 พลังงาน",
+                            speak: "เดิมโลบ็อกมีพลังงานเท่าไหร่ไม่รู้ แต่เมื่อเสียไปห้าสิบจึงเหลือสองร้อยห้าสิบพลังงาน",
+                            op: "-", numA: 50, numB: 250, ans: 300,
+                            exp: "<span>[ ? ]</span> - 50 = 250"
+                        },
+                        {
+                            txt: "🛸 ยานอวกาศมีถังเชื้อเพลิงขนาด 1,000 ลิตร เดิมมีแก๊สอยู่เท่าไหร่ไม่รู้ [?] แต่เติมเพิ่มไป 350 ลิตรจนเต็มพอดี",
+                            speak: "ยานอวกาศมีถังแก๊สขนาดหนึ่งพันลิตร เดิมมีแก๊สอยู่เท่าไหร่ไม่รู้ แต่เมื่อเติมไปสามร้อยห้าสิบจึงเต็มถังพอดี",
+                            op: "+", numA: 350, numB: 1000, ans: 650,
+                            exp: "<span>[ ? ]</span> + 350 = 1000"
+                        },
+                        {
+                            txt: "🦁 ลูกสิงโตสะสมเหรียญได้ 230 เหรียญ ต้องสะสมเพิ่มกี่เหรียญ [?] ถึงจะได้ของขวัญชิ้นใหญ่ที่ 500 เหรียญ?",
+                            speak: "ลูกสิงโตสะสมเหรียญได้สองร้อยสามสิบเหรียญ ต้องสะสมเพิ่มอีกกี่เหรียญจึงจะได้ห้าร้อยเหรียญพอดี",
+                            op: "+", numA: 230, numB: 500, ans: 270,
+                            exp: "230 + <span>[ ? ]</span> = 500"
+                        }
+                    ];
+                    const selected = stories[i % stories.length];
+                    qObj = {
+                        expression: selected.exp,
+                        speakText: selected.speak,
+                        unknownPos: 'middle',
+                        numA: selected.numA,
+                        numB: selected.numB,
+                        op: selected.op,
+                        correct: selected.ans,
+                        isStory: true,
+                        storyText: selected.txt,
+                        hints: [
+                            `ลองแปลงเรื่องเล่าวิเศษออกมาเป็นสูตรสัญลักษณ์ตัวเลข เพื่อคิดย้อนหลังกันดีกว่า!`,
+                            `จัดระเบียบความคิด: คำตอบหาได้จากเอาส่วนปลายทางลบสิ่งที่มีอยู่ตอนนี้ออกครับ`,
+                            `คำตอบคือ ${selected.ans} เพื่อให้เรื่องราวนี้สมบูรณ์แบบและสมดุลจ้า!`
+                        ]
+                    };
+                }
+                questions.push(qObj);
+            }
+            return questions;
+        }
+
+        function startEndlessMode() {
+            playSound('victory');
+            gameState.isEndless = true;
+            gameState.activeLevel = 4; 
+            gameState.currentQuestionIndex = 0;
+            gameState.correctAnswers = 0;
+            gameState.questions = generateQuestions(4); 
+
+            document.getElementById('game-level-tag').innerText = `ผจญภัยไร้ขีดจำกัด 🚀`;
+            
+            document.getElementById('input-choices-container').classList.remove('hidden');
+            document.getElementById('input-keypad-container').classList.add('hidden');
+
+            changeView('view-gameplay');
+            loadQuestion();
+        }
+
+        function startLevel(levelNum) {
+            playSound('victory');
+            gameState.isEndless = false;
+            gameState.activeLevel = levelNum;
+            gameState.currentQuestionIndex = 0;
+            gameState.correctAnswers = 0;
+            gameState.questions = generateQuestions(levelNum);
+            
+            document.getElementById('game-level-tag').innerText = `ด่านที่ ${levelNum}`;
+            
+            const choicesContainer = document.getElementById('input-choices-container');
+            const keypadContainer = document.getElementById('input-keypad-container');
+            
+            if (levelNum === 3) {
+                choicesContainer.classList.add('hidden');
+                keypadContainer.classList.remove('hidden');
+                document.getElementById('typed-answer-input').value = '';
+            } else {
+                choicesContainer.classList.remove('hidden');
+                keypadContainer.classList.add('hidden');
+            }
+
+            changeView('view-gameplay');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            gameState.hintStep = 0;
+            document.getElementById('hint-box-display').classList.add('hidden');
+            
+            const qIndex = gameState.currentQuestionIndex;
+            
+            if (gameState.isEndless) {
+                document.getElementById('question-progress').innerText = `ทำสำเร็จมาแล้ว ${gameState.correctAnswers} ข้อ`;
+            } else {
+                document.getElementById('question-progress').innerText = `ข้อที่ ${qIndex + 1}/5`;
+            }
+            
+            const question = gameState.questions[qIndex];
+            gameState.currentQuestionObj = question;
+
+            document.getElementById('math-equation-display').innerHTML = question.expression;
+
+            const batt = document.getElementById('visual-battery-level');
+            const helperText = document.getElementById('visual-aid-helper-text');
+            
+            const percent = Math.floor(Math.random() * 40) + 40;
+            batt.style.width = `${percent}%`;
+            
+            if (question.isStory) {
+                helperText.innerText = question.storyText;
+                question.speakText = question.storyText;
+            } else {
+                if (question.op === '+') {
+                    helperText.innerText = `มีสะสมแล้ว ${question.numA} ชิ้น พลังงานสูงสุดปลายทางคือ ${question.numB} มาคิดเลขช่วยกันเถอะ!`;
+                } else {
+                    helperText.innerText = `มีของเริ่มต้น ${question.numA} ชิ้น ทำหายไปจำนวนหนึ่ง เหลือที่เก็บรักษากล่องอยู่ ${question.numB} ชิ้น`;
+                }
+            }
+
+            if (gameState.activeLevel !== 3) {
+                generateChoices(question.correct);
+            }
+
+            if (gameState.gameMode === 'challenge' && !gameState.isEndless) {
+                document.getElementById('timer-container').style.opacity = '1';
+                startTimer();
+            } else {
+                document.getElementById('timer-container').style.opacity = '0';
+                clearInterval(gameState.timerInterval);
+            }
+
+            setSpeechBubble(question.isStory ? "โอ๊ะ! มีเรื่องราวมหาสนุกเกิดขึ้น ลองให้โลบ็อกช่วยวิเคราะห์นะจ๊ะ!" : `ข้อที่ ${qIndex + 1} แล้วนะจ๊ะ! สู้ๆ นะเด็กๆ กดปุ่มลำโพงเพื่อฟังเสียงโจทย์ได้นะ!`);
+            speakCurrentQuestion();
+        }
+
+        function generateChoices(correctAnswer) {
+            const container = document.getElementById('input-choices-container');
+            container.innerHTML = '';
+
+            let distractors = new Set();
+            while (distractors.size < 3) {
+                let diff = Math.floor(Math.random() * 30) - 15;
+                if (diff !== 0) {
+                    let num = correctAnswer + diff;
+                    if (num >= 0 && num !== correctAnswer) {
+                        distractors.add(num);
+                    }
+                }
+            }
+
+            let allChoices = [correctAnswer, ...distractors];
+            allChoices.sort(() => Math.random() - 0.5);
+
+            allChoices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = "bg-white hover:bg-sky-50 border-4 border-sky-400 hover:border-indigo-400 p-5 rounded-2xl text-3xl font-bold text-sky-800 transition transform active:scale-95 shadow-md";
+                btn.innerText = choice.toLocaleString();
+                btn.onclick = () => submitAnswer(choice);
+                container.appendChild(btn);
+            });
+        }
+
+        function startTimer() {
+            clearInterval(gameState.timerInterval);
+            gameState.timeLeft = 30;
+            document.getElementById('timer-display').innerText = gameState.timeLeft;
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                document.getElementById('timer-display').innerText = gameState.timeLeft;
+                
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    playSound('wrong');
+                    setSpeechBubble("หมดเวลาซะแล้ว! ไม่เป็นไรนะ ลองทำข้อถัดไปกันดีกว่าครับ");
+                    setTimeout(() => nextQuestion(), 2500);
+                } else {
+                    document.getElementById('timer-display').innerText = gameState.timeLeft;
+                    if (gameState.timeLeft < 1.5) {
+                        playSound('qte_tick');
+                    }
+                }
+            }, 1000);
+        }
+
+        function pressKey(key) {
+            playSound('click');
+            const input = document.getElementById('typed-answer-input');
+            if (key === 'clear') {
+                input.value = '';
+            } else if (key === 'back') {
+                input.value = input.value.slice(0, -1);
+            } else {
+                if (input.value.length < 5) {
+                    input.value += key;
+                }
+            }
+        }
+
+        function submitTypedAnswer() {
+            const inputVal = parseInt(document.getElementById('typed-answer-input').value.trim());
+            if (isNaN(inputVal)) {
+                alert("พิมพ์คำตอบเป็นตัวเลขลงไปก่อนส่งนะจ๊ะ!");
+                return;
+            }
+            submitAnswer(inputVal);
+        }
+
+        function submitAnswer(userAns) {
+            clearInterval(gameState.timerInterval);
+            const question = gameState.questions[gameState.currentQuestionIndex];
+            
+            if (userAns === question.correct) {
+                playSound('correct');
+                gameState.correctAnswers++;
+                gameState.coins += 10; 
+                
+                loboxCheer();
+                setSpeechBubble("ถูกต้องจ้า! เก่งที่สุดในสามโลกเลยคร้าบ! 🥳🎉");
+                
+                document.getElementById('player-coins').classList.add('scale-125', 'text-yellow-400');
+                setTimeout(() => {
+                    document.getElementById('player-coins').classList.remove('scale-125', 'text-yellow-400');
+                }, 800);
+                
+                const isQteTriggered = Math.random() < 0.25;
+                if (isQteTriggered) {
+                    setTimeout(() => {
+                        triggerQTE(() => {
+                            playSound('qte_success');
+                            gameState.coins += 20; 
+                            saveProgress();
+                            setSpeechBubble("สุดยอดเลย! ชาร์จพลังงานกางบาเรียสำเร็จ ได้รับ 20 เหรียญโบนัส! 🛡️⚡");
+                            setTimeout(() => nextQuestion(), 2500);
+                        }, () => {
+                            playSound('wrong');
+                            setSpeechBubble("อ๊ะ! ชาร์จพลังงานไม่ทัน แต่ไม่เป็นไรนะ สู้ข้อต่อไปกันใหม่!");
+                            setTimeout(() => nextQuestion(), 2500);
+                        });
+                    }, 1500);
+                } else {
+                    setTimeout(() => nextQuestion(), 2000);
+                }
+            } else {
+                playSound('wrong');
+                autoOpenHintOnWrong();
+                
+                const gentleHints = [
+                    "ลองสลับเลขคิดย้อนกลับดูนะ",
+                    "ไม่เป็นไรนะน้องคนเก่ง ลองดูคำใบ้ที่กล่องสีเหลืองนะจ๊ะ",
+                    "เกือบถูกแล้วจ้า ลองทบทวนใหม่อีกนิดนะ"
+                ];
+                setSpeechBubble(gentleHints[Math.floor(Math.random() * gentleHints.length)]);
+                
+                if (gameState.gameMode === 'practice' || gameState.isEndless) {
+                    if (gameState.activeLevel === 3) {
+                        document.getElementById('typed-answer-input').value = '';
+                    }
+                } else {
+                    setTimeout(() => nextQuestion(), 4000);
+                }
+            }
+            saveProgress();
+        }
+
+        function autoOpenHintOnWrong() {
+            const box = document.getElementById('hint-box-display');
+            const txt = document.getElementById('active-hint-text');
+            const activeQuestion = gameState.currentQuestionObj;
+            if (activeQuestion) {
+                box.classList.remove('hidden');
+                txt.innerText = activeQuestion.hints[0];
+                gameState.hintStep = 1;
+                for (let i = 1; i <= 3; i++) {
+                    const btn = document.getElementById(`hint-btn-${i}`);
+                    if (i === 1) {
+                        btn.className = btn.className.replace('bg-opacity-20', 'bg-opacity-100') + ' ring-2 ring-indigo-400';
+                    } else {
+                        btn.className = btn.className.replace('ring-2 ring-indigo-400', '');
+                    }
+                }
+            }
+        }
+
+        // QTE Engine implementation
+        function triggerQTE(successCallback, failCallback) {
+            playSound('victory');
+            qteState.active = true;
+            qteState.count = 0;
+            qteState.target = 15;
+            qteState.timeLeft = 5.0;
+            qteState.successCallback = successCallback;
+            qteState.failCallback = failCallback;
+
+            const scenarios = [
+                { title: "พายุสุริยะโหมกระหน่ำ! ☀️", desc: "บาเรียของโลบ็อกลดลงต่ำมาก! ช่วยกดหัวใจรัว ๆ เพื่อกางป้อมบาเรียด่วน!" },
+                { title: "อุกกาบาตดาวตกแสนน่ารัก! ☄️", desc: "เศษอุกกาบาตกำลังลอยมาชน! กดปุ่มส่งความรักกางบาเรียปกป้องโลบ็อกด่วน!" },
+                { title: "แบตเตอรี่ฉุกเฉินขัดข้อง! 🔋", desc: "กระแสไฟฟ้าตกในยานอวกาศ! ช่วยกดกระตุ้นเซลล์แกนพลังงานให้เต็มเร็ว!" }
+            ];
+            const choice = scenarios[Math.floor(Math.random() * scenarios.length)];
+            
+            document.getElementById('qte-title').innerText = choice.title;
+            document.getElementById('qte-desc').innerText = choice.desc;
+            document.getElementById('qte-target-text').innerText = `0 / ${qteState.target} ครั้ง`;
+            document.getElementById('qte-progress-bar').style.width = `0%`;
+            document.getElementById('qte-timer').innerText = qteState.timeLeft.toFixed(1);
+
+            const modal = document.getElementById('qte-modal');
+            modal.classList.remove('hidden');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+
+            qteState.interval = setInterval(() => {
+                qteState.timeLeft -= 0.1;
+                if (qteState.timeLeft <= 0) {
+                    qteState.timeLeft = 0;
+                    document.getElementById('qte-timer').innerText = "0.0";
+                    endQte(false);
+                } else {
+                    document.getElementById('qte-timer').innerText = qteState.timeLeft.toFixed(1);
+                    if (qteState.timeLeft < 1.5) {
+                        playSound('qte_tick');
+                    }
+                }
+            }, 100);
+        }
+
+        function registerQteTap() {
+            if (!qteState.active) return;
+            playSound('click');
+            
+            qteState.count++;
+            
+            const btn = document.getElementById('qte-click-btn');
+            btn.classList.add('scale-90');
+            setTimeout(() => btn.classList.remove('scale-90'), 80);
+
+            const percent = (qteState.count / qteState.target) * 100;
+            document.getElementById('qte-progress-bar').style.width = `${percent}%`;
+            document.getElementById('qte-target-text').innerText = `${qteState.count} / ${qteState.target} ครั้ง`;
+
+            if (qteState.count >= qteState.target) {
+                endQte(true);
+            }
+        }
+
+        function endQte(isSuccess) {
+            qteState.active = false;
+            clearInterval(qteState.interval);
+
+            const modal = document.getElementById('qte-modal');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+
+            if (isSuccess) {
+                if (qteState.successCallback) qteState.successCallback();
+            } else {
+                if (qteState.failCallback) qteState.failCallback();
+            }
+        }
+
+        function nextQuestion() {
+            if (gameState.isEndless) {
+                gameState.questions.push(generateQuestions(4)[0]);
+                gameState.currentQuestionIndex++;
+                loadQuestion();
+                return;
+            }
+
+            gameState.currentQuestionIndex++;
+            if (gameState.currentQuestionIndex < 5) {
+                if (gameState.activeLevel === 3) {
+                    document.getElementById('typed-answer-input').value = '';
+                }
+                loadQuestion();
+            } else {
+                finishLevel();
+            }
+        }
+
+        function finishLevel() {
+            clearInterval(gameState.timerInterval);
+            playSound('victory');
+            
+            const level = gameState.activeLevel;
+            const correct = gameState.correctAnswers;
+            
+            let stars = 0;
+            if (correct === 5) stars = 3;
+            else if (correct >= 3) stars = 2;
+            else if (correct >= 1) stars = 1;
+
+            if (stars > (gameState.levelStars[level] || 0)) {
+                gameState.levelStars[level] = stars;
+            }
+
+            const bonusCoins = correct * 10 + (stars * 10);
+            gameState.coins += bonusCoins;
+
+            saveLeaderboardRecord(gameState.username, correct, stars);
+
+            let starStr = '';
+            for (let s = 0; s < 3; s++) {
+                starStr += s < stars ? '⭐' : '☆';
+            }
+            document.getElementById('summary-stars-display').innerText = starStr;
+            document.getElementById('summary-correct-count').innerText = `${correct} / 5 ข้อ`;
+            document.getElementById('summary-coins-earned').innerText = `+${bonusCoins} 💰`;
+
+            const cheerBox = document.getElementById('summary-cheer-text');
+            if (stars === 3) {
+                cheerBox.innerText = `เหรียญเกียรติยศ 3 ดาวทอง! "${gameState.username}" เก่งเรื่องการแก้ปริศนาสุดยอดไปเลย!`;
+            } else if (stars === 2) {
+                cheerBox.innerText = `เก่งมากๆ เลยครับ! ได้รับ 2 ดาวเกียรติยศ ฝึกฝนบ่อยๆ จะได้สามดาวเต็มแน่นอน!`;
+            } else {
+                cheerBox.innerText = `พยายามได้ดีมากครับ! โลบ็อกเป็นกำลังใจให้ ลองเล่นใหม่อีกรอบเพื่อแก้ไขคะแนนกันนะ`;
+            }
+
+            saveProgress();
+            updateLevelStarsUI();
+            changeView('view-summary');
+            setSpeechBubble("ไชโย! ทำภารกิจสำเร็จลุล่วงแล้ว ไปเปลี่ยนชุดสวยงามฉลองกันเถอะ!");
+        }
+
+        function getHint(level) {
+            playSound('click');
+            const box = document.getElementById('hint-box-display');
+            const txt = document.getElementById('active-hint-text');
+            
+            box.classList.remove('hidden');
+            
+            const activeQuestion = gameState.currentQuestionObj;
+            if (activeQuestion) {
+                txt.innerText = activeQuestion.hints[level - 1];
+                gameState.hintStep = level;
+                
+                for (let i = 1; i <= 3; i++) {
+                    const btn = document.getElementById(`hint-btn-${i}`);
+                    if (i === level) {
+                        btn.className = btn.className.replace('bg-opacity-20', 'bg-opacity-100') + ' ring-2 ring-indigo-400';
+                    } else {
+                        btn.className = btn.className.replace('ring-2 ring-indigo-400', '');
+                    }
+                }
+
+                speakHint();
+            }
+        }
+
+        // --- 6. LOBOX EMOTIONAL INTERACTIONS ---
+        function setSpeechBubble(text) {
+            const bubble = document.getElementById('lobox-speech');
+            bubble.classList.add('scale-75', 'opacity-0');
+            setTimeout(() => {
+                bubble.innerText = text;
+                bubble.classList.remove('scale-75', 'opacity-0');
+                bubble.classList.add('scale-100', 'opacity-100');
+            }, 150);
+        }
+
+        function loboxCheer() {
+            const avatar = document.getElementById('lobox-body-component');
+            avatar.classList.add('jump-animation');
+            setTimeout(() => {
+                avatar.classList.remove('jump-animation');
+            }, 800);
+        }
+
+        function loboxCheerNegative() {
+            const avatar = document.getElementById('lobox-body-component');
+            avatar.classList.add('shake-animation');
+            setTimeout(() => {
+                avatar.classList.remove('shake-animation');
+            }, 500);
+        }
+
+        // --- 7. LOCAL LEADERBOARD SYSTEM ---
+        function saveLeaderboardRecord(name, correct, stars) {
+            let records = JSON.parse(localStorage.getItem('lobox_math_leaderboard_v1')) || [];
+            const existIdx = records.findIndex(r => r.name.toLowerCase() === name.toLowerCase());
+            if (existIdx !== -1) {
+                if (correct > records[existIdx].correct) {
+                    records[existIdx].correct = correct;
+                    records[existIdx].stars = stars;
+                    records[existIdx].date = new Date().toLocaleDateString('th-TH');
+                }
+            } else {
+                records.push({
+                    name: name,
+                    correct: correct,
+                    stars: stars,
+                    date: new Date().toLocaleDateString('th-TH')
+                });
+            }
+            
+            records.sort((a, b) => b.correct - a.correct || b.stars - a.stars);
+            localStorage.setItem('lobox_math_leaderboard_v1', JSON.stringify(records));
+        }
+
+        function refreshLeaderboard() {
+            const container = document.getElementById('mini-leaderboard');
+            container.innerHTML = '';
+            
+            const records = JSON.parse(localStorage.getItem('lobox_math_leaderboard_v1')) || [];
+            if (records.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center">ยังไม่มีบันทึกคะแนนในเครื่องนี้ มาร่วมสร้างประวัติศาสตร์คนแรกกัน!</p>`;
+                return;
+            }
+
+            const topThree = records.slice(0, 3);
+            topThree.forEach((record, index) => {
+                const colors = ['bg-amber-100 text-amber-800', 'bg-slate-100 text-slate-800', 'bg-orange-100 text-orange-800'];
+                const trophies = ['🥇', '🥈', '🥉'];
+                
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center bg-slate-50 border border-slate-100 p-2 rounded-xl";
+                
+                let starStr = '';
+                for (let s = 0; s < record.stars; s++) starStr += '⭐';
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${colors[index] || 'bg-slate-200'}">
+                            ${trophies[index] || (index + 1)}
+                        </span>
+                        <span class="font-bold text-slate-700">${record.name}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-indigo-600 font-bold">${record.correct} ข้อเต็ม</span>
+                        <span class="text-[10px] text-yellow-500">${starStr}</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function confirmReset() {
+            if (confirm("คุณแน่ใจนะว่าต้องการเริ่มเกมใหม่ตั้งแต่ต้น? ไอเทมที่ปลดล็อกและเหรียญทั้งหมดจะถูกลบหายไปนะจ๊ะ!")) {
+                localStorage.clear();
+                gameState.coins = 0;
+                gameState.username = 'นักเรียน';
+                gameState.unlockedItems = ['hat_none', 'hat_cat', 'glasses_none', 'glasses_nerd', 'shirt_none', 'shirt_heart', 'shoes_none', 'shoes_skate', 'accessory_none', 'accessory_headphones'];
+                gameState.equipped = {
+                    hat: 'hat_none',
+                    glasses: 'glasses_none',
+                    shirt: 'shirt_none',
+                    shoes: 'shoes_none',
+                    accessory: 'accessory_none'
+                };
+                gameState.levelStars = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                gameState.aiBackdropImg = '';
+                
+                document.getElementById('username-input').value = '';
+                document.getElementById('current-username').innerText = 'นักเรียน';
+                document.getElementById('active-user-display').classList.add('hidden');
+                
+                updateLoboxDisplay();
+                updatePointsUI();
+                updateLevelStarsUI();
+                refreshLeaderboard();
+                changeView('view-home');
+                alert("รีเซ็ตหุ่นยนต์โลบ็อกเป็นร่างแรกเริ่มเรียบร้อยแล้วจ้า!");
+            }
+        }
+
+        // --- 8. TEXT-TO-SPEECH (TTS) VOICEOVER CONTROLLERS ---
+        function speakSpeechBubble() {
+            const text = document.getElementById('lobox-speech').innerText;
+            speakThaiText(text);
+        }
+
+        function speakCurrentQuestion() {
+            if (gameState.currentQuestionObj) {
+                speakThaiText(gameState.currentQuestionObj.speakText);
+            }
+        }
+
+        // --- 9. TEACHER CONTROL & API KEY MANAGEMENT ---
+        function openApiKeyModal() {
+            playSound('click');
+            const savedKey = localStorage.getItem('lobox_gemini_api_key') || "";
+            document.getElementById('api-key-input').value = savedKey;
+            
+            const modal = document.getElementById('api-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeApiKeyModal() {
+            playSound('click');
+            document.getElementById('api-modal').classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const keyInput = document.getElementById('api-key-input').value.trim();
+            if (keyInput) {
+                localStorage.setItem('lobox_gemini_api_key', keyInput);
+                playSound('victory');
+                alert("🔑 บันทึกกุญแจวิเศษ AI เรียบร้อย! ตอนนี้ใช้งานระบบแนะนำวิเศษและสร้างภาพได้แล้วครับ");
+                closeApiKeyModal();
+            } else {
+                alert("กรุณากรอก API Key ก่อนบันทึกนะจ๊ะคุณครู");
+            }
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('lobox_gemini_api_key');
+            document.getElementById('api-key-input').value = '';
+            playSound('click');
+            alert("🧹 ลบคีย์ออกจากระบบความจำเครื่องแล้วครับ ฟีเจอร์ AI จะกลับสู่ออฟไลน์");
+            closeApiKeyModal();
+        }
+
+        function getSavedApiKey() {
+            return localStorage.getItem('lobox_gemini_api_key') || "";
+        }
+
+        function speakHint() {
+            const hintText = document.getElementById('active-hint-text').innerText;
+            speakThaiText(hintText);
+        }
+
+        function speakThaiText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                
+                const icon = document.getElementById('tts-icon');
+                if (icon) {
+                    icon.className = "fa-solid fa-volume-high animate-ping";
+                    setTimeout(() => {
+                        icon.className = "fa-solid fa-volume-high";
+                    }, 1200);
+                }
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'th-TH'; 
+                utterance.rate = 0.95;    
+                utterance.pitch = 1.2;    
+
+                const voices = window.speechSynthesis.getVoices();
+                const thVoice = voices.find(v => v.lang.includes('TH') || v.lang.includes('th'));
+                if (thVoice) utterance.voice = thVoice;
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Speech synthesis API not supported on this device.");
+            }
+        }
+
+        // --- 10. GEMINI API CLIENT & AI INTEGRATIONS ---
+        async function callGeminiText(prompt, systemInstruction = "") {
+            const apiKey = getSavedApiKey();
+            if (!apiKey) {
+                alert("🚨 ไม่พบกุญแจวิเศษ! กรุณาให้คุณครูช่วยกรอกคีย์ที่รูปปุ่ม 'กุญแจวิเศษ AI' มุมขวาบนของเกมก่อนนะจ๊ะน้องๆ!");
+                return null;
+            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+            if (systemInstruction) {
+                payload.systemInstruction = {
+                    parts: [{ text: systemInstruction }]
+                };
+            }
+
+            let delay = 1000;
+            for (let i = 0; i < 3; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed. Retrying...`, error);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            return null;
+        }
+
+        async function callImagen(prompt) {
+            const apiKey = getSavedApiKey();
+            if (!apiKey) {
+                alert("🚨 ไม่พบกุญแจวิเศษ! กรุณาให้คุณครูช่วยกรอกคีย์ที่รูปปุ่ม 'กุญแจวิเศษ AI' มุมขวาบนของเกมก่อนนะจ๊ะน้องๆ!");
+                return null;
+            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+            
+            const payload = {
+                instances: { prompt: prompt },
+                parameters: { "sampleCount": 1 }
+            };
+
+            let delay = 1000;
+            for (let i = 0; i < 3; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const result = await response.json();
+                    const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+                    if (base64Data) {
+                        return `data:image/png;base64,${base64Data}`;
+                    }
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed. Retrying...`, error);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            return null;
+        }
+
+        // Ask dynamic help from AI Lobox Coach
+        async function askAICoach() {
+            const question = gameState.currentQuestionObj;
+            if (!question) return;
+
+            const apiKey = getSavedApiKey();
+            if (!apiKey) {
+                alert("🚨 ไม่พบกุญแจวิเศษ! กรุณาให้คุณครูช่วยตั้งค่าคีย์ที่ปุ่ม 'กุญแจวิเศษ AI' มุมขวาบนก่อนนะครับน้องๆ!");
+                return;
+            }
+
+            playSound('click');
+            const coachBtn = document.getElementById('ai-coach-btn');
+            const hintBox = document.getElementById('hint-box-display');
+            const activeHintText = document.getElementById('active-hint-text');
+
+            coachBtn.disabled = true;
+            coachBtn.classList.remove('animate-pulse');
+            coachBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> ครู AI กำลังคิด...`;
+
+            setSpeechBubble("ครู AI โลบ็อกกำลังสแกนหาคำใบ้แสนอบอุ่นในฐานข้อมูลคณิตศาสตร์อยู่นะ... 🧠✨");
+
+            const systemPrompt = `คุณคือ "ครูโลบ็อก" หุ่นยนต์คุณครูสอนคณิตศาสตร์ระดับชั้นประถมศึกษาปีที่ 2 (อายุประมาณ 7-8 ปี)
+            จงอธิบายวิธีคิดหาคำตอบของโจทย์คณิตศาสตร์ที่กำหนดให้อย่างอบอุ่น ใจดี เป็นมิตร และเข้าใจง่ายที่สุดสำหรับเด็ก ป.2
+            ใช้ถ้อยคำสั้นๆ คล้ายกับการพูดคุยกับเพื่อนหรือลูกศิษย์ตัวน้อย และให้กำลังใจน้องเสมอ ห้ามเฉลยตัวเลขคำตอบตรงๆ ทันทีในประโยคแรก แต่พยายามไกณ์วิธีคิดย้อนกลับ เช่น
+            "ถ้า 25 + ? = 60 ลองคิดว่า มีอยู่ 25 แล้ว ต้องนำ 60 มาลบด้วย 25 ดูสิครับคนเก่ง"
+            ตอบเป็นภาษาไทย ไม่เกิน 2-3 ประโยคสั้นๆ ห้ามยาวเด็ดขาดเพราะเด็กป.2 จะสับสนและอ่านไม่ทัน`;
+
+            const userQuery = `นักเรียนชื่อ "${gameState.username}" กำลังทำโจทย์คณิตศาสตร์ป.2: ${question.numA} ${question.op} [ ? ] = ${question.numB} (คำตอบที่ถูกต้องคือเลข ${question.correct}) ช่วยส่งคำใบ้สอนคิดย้อนกลับที่สั้นกระชับเข้าใจง่ายสุดๆ ให้หน่อยครับ`;
+
+            try {
+                const aiResponse = await callGeminiText(userQuery, systemPrompt);
+                if (aiResponse) {
+                    hintBox.classList.remove('hidden');
+                    activeHintText.innerHTML = `<span class="bg-pink-100 text-pink-700 font-bold px-1.5 py-0.5 rounded-full text-[10px] mr-1">🧠 ครู AI แนะนำ :</span> ${aiResponse}`;
+                    setSpeechBubble("ครู AI โลบ็อก แนะแนวทางวิเศษมาแล้ว ลองฟังเสียงดูสิครับ!");
+                    speakHint();
+                } else {
+                    setSpeechBubble("โอ๊ะ! คลื่นสัญญาณ AI ออฟไลน์ชั่วขณะ ลองกดใหม่อีกครั้งนะจ๊ะ!");
+                }
+            } catch (err) {
+                console.error(err);
+                setSpeechBubble("ไม่พบสัญญาณเชื่อมต่อจาก AI ลองใหม่อีกรอบนะครับ!");
+            } finally {
+                coachBtn.disabled = false;
+                coachBtn.classList.add('animate-pulse');
+                coachBtn.innerHTML = `<i class="fa-solid fa-brain"></i> ครู AI ใบ้ด่วน`;
+            }
+        }
+
+        // Generate custom outfit/scenery with Imagen
+        async function generateAICostume() {
+            const apiKey = getSavedApiKey();
+            if (!apiKey) {
+                alert("🚨 ไม่พบกุญแจวิเศษ! กรุณาให้คุณครูช่วยตั้งค่าคีย์ที่ปุ่ม 'กุญแจวิเศษ AI' มุมขวาบนก่อนนะครับน้องๆ!");
+                return;
+            }
+
+            const promptInput = document.getElementById('ai-costume-prompt');
+            const promptValue = promptInput.value.trim();
+            if (!promptValue) {
+                alert("กรุณาพิมพ์ความคิดสร้างสรรค์น่ารักๆ ลงไปก่อนนะครับคนเก่ง! 😊");
+                return;
+            }
+
+            playSound('click');
+            const genBtn = document.getElementById('ai-generate-btn');
+            const spinner = document.getElementById('ai-loading-spinner');
+            const previewContainer = document.getElementById('ai-costume-preview-container');
+            const previewImg = document.getElementById('ai-costume-preview-img');
+
+            genBtn.disabled = true;
+            genBtn.innerText = "กำลังเสก... 🪄";
+            previewContainer.classList.remove('hidden');
+            spinner.classList.remove('hidden');
+
+            setSpeechBubble("เวทมนตร์วาดภาพของ AI กำลังผสมสีเพื่อรังสรรค์พื้นหลังในฝันให้โลบ็อกอยู่นะจ๊ะ... 🎨🌟");
+
+            const enhancedPrompt = `A delightful, high-quality, colorful cartoon vector backdrop landscape illustration suitable for a friendly robot toy kid game. Isolated on neat pastel palette background, very cozy, kid-friendly magical environment: ${promptValue}`;
+
+            try {
+                const base64Image = await callImagen(enhancedPrompt);
+                if (base64Image) {
+                    previewImg.src = base64Image;
+                    gameState.aiBackdropImg = base64Image;
+                    setSpeechBubble("ไชโย! เสกฉากหลังเสร็จสิ้นแล้ว สวยงามมาก! กดปุ่มสีเขียวด้านล่างเพื่อแต่งตัวให้โลบ็อกได้เลย!");
+                } else {
+                    setSpeechBubble("ดินสอสีของ AI เกิดสีหมดชั่วคราว ลองกดร่ายคาถาใหม่อีกรอบจ้า!");
+                }
+            } catch (err) {
+                console.error(err);
+                setSpeechBubble("เวทมนตร์วิเศษขัดข้อง มีข้อผิดพลาดในระบบวาดภาพ AI!");
+            } finally {
+                spinner.classList.add('hidden');
+                genBtn.disabled = false;
+                genBtn.innerText = "เสกชุด! 🪄";
+            }
+        }
+
+        // Equip AI background
+        function equipAICostume() {
+            if (gameState.aiBackdropImg) {
+                playSound('victory');
+                setSpeechBubble("ว้าว! สวมใส่ฉากหลังในฝันของขวัญพิเศษจาก AI เรียบร้อย อัศจรรย์และน่ารักมากๆ!");
+                updateLoboxDisplay();
+                saveProgress();
+                loboxCheer();
+            } else {
+                alert("ไม่มีรูปภาพฉากวิเศษให้ใส่นะครับ ลองพิมพ์ข้อความแล้วกด 'เสกชุด!' ดูก่อนจ้า");
+            }
+        }
+
+        // Remove AI background
+        function deleteAICostume() {
+            playSound('click');
+            gameState.aiBackdropImg = '';
+            updateLoboxDisplay();
+            saveProgress();
+            populateClosetItems();
+            setSpeechBubble("ถอดรูปพื้นหลังแต่งตัว AI เรียบร้อย กลับสู่ร่างอวกาศเริ่มต้นครับ!");
+        }
+    </script>
+</body>
+</html>
