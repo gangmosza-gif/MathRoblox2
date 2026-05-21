@@ -1928,7 +1928,7 @@
         }
 
         function getSavedApiKey() {
-            return localStorage.getItem('lobox_gemini_api_key') || "";
+            return "server-managed";
         }
 
         function speakHint() {
@@ -1965,33 +1965,23 @@
 
         // --- 10. GEMINI API CLIENT & AI INTEGRATIONS ---
         async function callGeminiText(prompt, systemInstruction = "") {
-            const apiKey = getSavedApiKey();
-            if (!apiKey) {
-                alert("🚨 ไม่พบกุญแจวิเศษ! กรุณาให้คุณครูช่วยกรอกคีย์ที่รูปปุ่ม 'กุญแจวิเศษ AI' มุมขวาบนของเกมก่อนนะจ๊ะน้องๆ!");
-                return null;
-            }
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-            
             const payload = {
-                contents: [{ parts: [{ text: prompt }] }]
+                type: "text",
+                prompt,
+                systemInstruction
             };
-            if (systemInstruction) {
-                payload.systemInstruction = {
-                    parts: [{ text: systemInstruction }]
-                };
-            }
 
             let delay = 1000;
             for (let i = 0; i < 3; i++) {
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch('/api/gemini', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                    return result.text || null;
                 } catch (error) {
                     console.warn(`Attempt ${i + 1} failed. Retrying...`, error);
                     await new Promise(resolve => setTimeout(resolve, delay));
@@ -2002,32 +1992,22 @@
         }
 
         async function callImagen(prompt) {
-            const apiKey = getSavedApiKey();
-            if (!apiKey) {
-                alert("🚨 ไม่พบกุญแจวิเศษ! กรุณาให้คุณครูช่วยกรอกคีย์ที่รูปปุ่ม 'กุญแจวิเศษ AI' มุมขวาบนของเกมก่อนนะจ๊ะน้องๆ!");
-                return null;
-            }
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-            
             const payload = {
-                instances: { prompt: prompt },
-                parameters: { "sampleCount": 1 }
+                type: "image",
+                prompt
             };
 
             let delay = 1000;
             for (let i = 0; i < 3; i++) {
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch('/api/gemini', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const result = await response.json();
-                    const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-                    if (base64Data) {
-                        return `data:image/png;base64,${base64Data}`;
-                    }
+                    return result.imageUrl || null;
                 } catch (error) {
                     console.warn(`Attempt ${i + 1} failed. Retrying...`, error);
                     await new Promise(resolve => setTimeout(resolve, delay));
