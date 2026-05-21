@@ -45,13 +45,12 @@ export default async function handler(req, res) {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: { prompt },
-          parameters: { sampleCount: 1 }
+          contents: [{ parts: [{ text: prompt }] }]
         })
       }
     );
@@ -61,9 +60,11 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: result.error?.message || 'Imagen request failed' });
     }
 
-    const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+    const imagePart = result.candidates?.[0]?.content?.parts?.find(part => part.inlineData?.data);
+    const base64Data = imagePart?.inlineData?.data;
+    const mimeType = imagePart?.inlineData?.mimeType || 'image/png';
     return res.status(200).json({
-      imageUrl: base64Data ? `data:image/png;base64,${base64Data}` : null
+      imageUrl: base64Data ? `data:${mimeType};base64,${base64Data}` : null
     });
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Unexpected server error' });
