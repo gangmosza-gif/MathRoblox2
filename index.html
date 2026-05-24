@@ -469,7 +469,7 @@
                         <!-- Simple Timer for Challenge Mode -->
                         <div id="timer-container" class="bg-rose-100 text-rose-700 px-3 py-1 rounded-xl flex items-center gap-2 text-sm font-bold opacity-0 transition-opacity">
                             <i class="fa-solid fa-clock animate-pulse"></i>
-                            <span id="timer-display">30</span> วินาที
+                            <span id="timer-display">120</span> วินาที
                         </div>
 
                         <button onclick="exitGamePrompt()" class="text-sm bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-200 font-bold flex items-center gap-1">
@@ -684,7 +684,7 @@
             questions: [],
             correctAnswers: 0,
             gameMode: 'practice', 
-            timeLeft: 30,
+            timeLeft: 120,
             timerInterval: null,
             hintStep: 0,
             currentQuestionObj: null,
@@ -1147,7 +1147,7 @@
             } else {
                 cBtn.className = "flex-1 py-2 text-center rounded-lg font-bold text-sm bg-white text-rose-600 shadow";
                 pBtn.className = "flex-1 py-2 text-center rounded-lg font-bold text-sm text-slate-600 hover:bg-white/40";
-                setSpeechBubble("โหมดท้าทายตื่นเต้น มีเวลาจำกัด 30 วินาทีต่อข้อ คิดเร็วสุดปัง!");
+                setSpeechBubble("โหมดท้าทายตื่นเต้น มีเวลาจำกัด 120 วินาทีต่อข้อ คิดอย่างใจเย็นได้เลย!");
             }
         }
 
@@ -1484,7 +1484,7 @@
 
         function startTimer() {
             clearInterval(gameState.timerInterval);
-            gameState.timeLeft = 30;
+            gameState.timeLeft = 120;
             document.getElementById('timer-display').innerText = gameState.timeLeft;
 
             gameState.timerInterval = setInterval(() => {
