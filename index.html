@@ -698,7 +698,10 @@
             unlockedItems: ['hat_none', 'hat_cat', 'glasses_none', 'glasses_nerd', 'shirt_none', 'shirt_heart', 'shoes_none', 'shoes_skate', 'accessory_none', 'accessory_headphones'],
             closetActiveTab: 'hat',
             levelStars: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-            aiBackdropImg: '' 
+            aiBackdropImg: '',
+            roundStartedAt: null,
+            roundAnswers: [],
+            roundCoinsEarned: 0
         };
 
         let qteState = {
@@ -901,6 +904,7 @@
             clearInterval(gameState.timerInterval);
             
             if (gameState.isEndless) {
+                saveScoreSessionToServer(0, gameState.roundCoinsEarned);
                 gameState.isEndless = false;
                 changeView('view-home');
             } else {
@@ -1363,6 +1367,7 @@
             gameState.currentQuestionIndex = 0;
             gameState.correctAnswers = 0;
             gameState.questions = generateQuestions(4); 
+            startRoundTelemetry();
 
             document.getElementById('game-level-tag').innerText = `ผจญภัยไร้ขีดจำกัด 🚀`;
             
@@ -1380,6 +1385,7 @@
             gameState.currentQuestionIndex = 0;
             gameState.correctAnswers = 0;
             gameState.questions = generateQuestions(levelNum);
+            startRoundTelemetry();
             
             document.getElementById('game-level-tag').innerText = `ด่านที่ ${levelNum}`;
             
@@ -1487,6 +1493,7 @@
                 
                 if (gameState.timeLeft <= 0) {
                     clearInterval(gameState.timerInterval);
+                    recordAnswerAttempt(null, gameState.currentQuestionObj, { timedOut: true });
                     playSound('wrong');
                     setSpeechBubble("หมดเวลาซะแล้ว! ไม่เป็นไรนะ ลองทำข้อถัดไปกันดีกว่าครับ");
                     setTimeout(() => nextQuestion(), 2500);
@@ -1525,11 +1532,13 @@
         function submitAnswer(userAns) {
             clearInterval(gameState.timerInterval);
             const question = gameState.questions[gameState.currentQuestionIndex];
+            recordAnswerAttempt(userAns, question);
             
             if (userAns === question.correct) {
                 playSound('correct');
                 gameState.correctAnswers++;
                 gameState.coins += 10; 
+                gameState.roundCoinsEarned += 10;
                 
                 loboxCheer();
                 setSpeechBubble("ถูกต้องจ้า! เก่งที่สุดในสามโลกเลยคร้าบ! 🥳🎉");
@@ -1545,6 +1554,7 @@
                         triggerQTE(() => {
                             playSound('qte_success');
                             gameState.coins += 20; 
+                            gameState.roundCoinsEarned += 20;
                             saveProgress();
                             setSpeechBubble("สุดยอดเลย! ชาร์จพลังงานกางบาเรียสำเร็จ ได้รับ 20 เหรียญโบนัส! 🛡️⚡");
                             setTimeout(() => nextQuestion(), 2500);
@@ -1577,6 +1587,72 @@
                 }
             }
             saveProgress();
+        }
+
+        function startRoundTelemetry() {
+            gameState.roundStartedAt = new Date().toISOString();
+            gameState.roundAnswers = [];
+            gameState.roundCoinsEarned = 0;
+        }
+
+        function stripHtml(html) {
+            const temp = document.createElement('div');
+            temp.innerHTML = html || '';
+            return temp.textContent || temp.innerText || '';
+        }
+
+        function recordAnswerAttempt(userAns, question, options = {}) {
+            if (!question) return;
+
+            const questionIndex = gameState.currentQuestionIndex + 1;
+            const attemptNumber = gameState.roundAnswers.filter(answer => answer.questionIndex === questionIndex).length + 1;
+            const isCorrect = userAns === question.correct && !options.timedOut;
+
+            gameState.roundAnswers.push({
+                questionIndex,
+                attemptNumber,
+                expression: stripHtml(question.expression),
+                storyText: question.storyText || '',
+                operation: question.op || '',
+                correctAnswer: question.correct,
+                playerAnswer: options.timedOut ? null : userAns,
+                isCorrect,
+                timedOut: Boolean(options.timedOut),
+                hintStep: gameState.hintStep || 0,
+                answeredAt: new Date().toISOString()
+            });
+        }
+
+        async function saveScoreSessionToServer(stars, coinsEarned) {
+            if (!gameState.roundStartedAt || gameState.roundAnswers.length === 0) return;
+
+            const payload = {
+                playerName: gameState.username,
+                level: gameState.activeLevel,
+                mode: gameState.gameMode,
+                correctCount: gameState.correctAnswers,
+                totalQuestions: gameState.isEndless ? gameState.roundAnswers.length : 5,
+                stars,
+                coinsEarned,
+                isEndless: gameState.isEndless,
+                startedAt: gameState.roundStartedAt,
+                finishedAt: new Date().toISOString(),
+                answers: gameState.roundAnswers
+            };
+
+            try {
+                const response = await fetch('/api/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    console.warn('Score save failed:', response.status);
+                }
+            } catch (error) {
+                console.warn('Score save unavailable:', error);
+            }
         }
 
         function autoOpenHintOnWrong() {
@@ -1713,6 +1789,7 @@
 
             const bonusCoins = correct * 10 + (stars * 10);
             gameState.coins += bonusCoins;
+            gameState.roundCoinsEarned += bonusCoins;
 
             saveLeaderboardRecord(gameState.username, correct, stars);
 
@@ -1734,6 +1811,7 @@
             }
 
             saveProgress();
+            saveScoreSessionToServer(stars, gameState.roundCoinsEarned);
             updateLevelStarsUI();
             changeView('view-summary');
             setSpeechBubble("ไชโย! ทำภารกิจสำเร็จลุล่วงแล้ว ไปเปลี่ยนชุดสวยงามฉลองกันเถอะ!");
