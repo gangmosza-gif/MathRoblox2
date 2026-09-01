@@ -1,0 +1,170 @@
+﻿{
+  "config_version": "phase4-v0.5.2",
+  "mappings": [
+    {
+      "item_id": "1",
+      "title": "กระบวนการรับลูกค้า และการบันทึก KYC ข้อมูลลูกค้า การใช้งาน Dip Chip",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_1]]"
+    },
+    {
+      "item_id": "2",
+      "title": "การเบิกถอนเงินสดตั้งแต่ 5 ล้านบาทขึ้นไป",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_2]]"
+    },
+    {
+      "item_id": "3.1",
+      "title": "การควบคุมสมุดฝากเงินคงเหลือ",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_3_1]]"
+    },
+    {
+      "item_id": "3.2",
+      "title": "การรับฝากสมุดฝากเงิน / สมุดเงินฝากที่ผู้ฝากทิ้งไว้ที่สาขา",
+      "status": "draft_observed",
+      "source_file": {
+        "expected_name_or_pattern": "*3.2*รับฝากสมุดฝากเงิน*.xlsx"
+      },
+      "sheet": {
+        "name": "3.2 การรับฝากสมุดฝากเงิน"
+      },
+      "read_rule": {
+        "source_cell": "A17"
+      },
+      "word_placeholder": "[[RESULT_3_2]]"
+    },
+    {
+      "item_id": "4",
+      "title": "การใช้บัตร/รหัส และการมอบอำนาจ",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_4]]"
+    },
+    {
+      "item_id": "5",
+      "title": "การยกเลิกการทำรายการ",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_5]]"
+    },
+    {
+      "item_id": "6",
+      "title": "การปฏิบัติงานตาม PDPA",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_6]]"
+    },
+    {
+      "item_id": "7",
+      "title": "การปฏิบัติงานเคาน์เตอร์ให้บริการลูกค้า",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_7]]"
+    },
+    {
+      "item_id": "8",
+      "title": "การใช้หลักประกันมูลค่าสูง",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_8]]"
+    },
+    {
+      "item_id": "9",
+      "title": "การตรวจนับเงินสด",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_9]]"
+    },
+    {
+      "item_id": "10",
+      "title": "การไม่นำส่งสลากกินแบ่งรัฐบาลหกหลัก",
+      "status": "pending_file",
+      "source_file": {
+        "expected_name_or_pattern": null
+      },
+      "sheet": {
+        "name": null
+      },
+      "read_rule": {
+        "source_cell": null
+      },
+      "word_placeholder": "[[RESULT_10]]"
+    }
+  ]
+}
