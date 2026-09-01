@@ -426,9 +426,11 @@ function Start-AuditOnsiteUI {
     $fileList.Font = New-AuditFont -Size 9.5
     $fileList.AllowDrop = $true
     $fileList.ShowItemToolTips = $true
-    [void]$fileList.Columns.Add('ชื่อไฟล์',320)
-    [void]$fileList.Columns.Add('ขนาด',80)
-    [void]$fileList.Columns.Add('แก้ไขล่าสุด',130)
+    [void]$fileList.Columns.Add('ชื่อไฟล์',240)
+    [void]$fileList.Columns.Add('ขนาด',78)
+    [void]$fileList.Columns.Add('แก้ไขล่าสุด',118)
+    # คอลัมน์ชื่อไฟล์ต้องยืดตามความกว้างจริง ไม่งั้นคอลัมน์วันที่จะหลุดออกนอกกรอบ
+    $fileList.Add_Resize({ $this.Columns[0].Width = [Math]::Max(160,$this.ClientSize.Width - 204) })
     $fileCard.Surface.Controls.Add($fileList)
     $fileCardHost = New-Object Windows.Forms.Panel
     $fileCardHost.Dock = 'Fill'; $fileCardHost.Padding = New-Object Windows.Forms.Padding(0,0,12,0)
@@ -440,9 +442,11 @@ function Start-AuditOnsiteUI {
     $scanGrid.Dock = 'Fill'
     [void](Set-AuditGridStyle -Grid $scanGrid)
     foreach ($column in @('ไฟล์','ข้อ','Workbook','Mapping','รายละเอียด')) { [void]$scanGrid.Columns.Add($column,$column) }
-    $scanGrid.Columns[1].Width = 60
-    $scanGrid.Columns[2].Width = 100
-    $scanGrid.Columns[3].Width = 100
+    $scanGrid.Columns[0].Width = 190
+    $scanGrid.Columns[1].Width = 52
+    $scanGrid.Columns[2].Width = 92
+    $scanGrid.Columns[3].Width = 92
+    $scanGrid.ShowCellToolTips = $true
     $scanGrid.Columns[4].AutoSizeMode = 'Fill'
     $scanCard.Surface.Controls.Add($scanGrid)
     $scanCardHost = New-Object Windows.Forms.Panel

@@ -1,0 +1,343 @@
+<title>Audit Onsite Report V0.8</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#eef1f4; --panel:#ffffff; --panel-2:#f7f9fb;
+  --ink:#1b232c; --ink-muted:#5d6b7a; --line:#d3dae1;
+  --accent:#0b5f9e; --accent-soft:#e2edf7; --warn:#a86e00;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#12171d; --panel:#1a2129; --panel-2:#141a21;
+  --ink:#e6ecf2; --ink-muted:#93a2b2; --line:#2b353f;
+  --accent:#5aa9e6; --accent-soft:#16232f; --warn:#d9a441;
+}}
+:root[data-theme="dark"]{
+  --ground:#12171d; --panel:#1a2129; --panel-2:#141a21;
+  --ink:#e6ecf2; --ink-muted:#93a2b2; --line:#2b353f;
+  --accent:#5aa9e6; --accent-soft:#16232f; --warn:#d9a441;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans Thai","Leelawadee UI","Segoe UI",Tahoma,sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1460px;margin:0 auto;padding:32px 24px 72px}
+header.top{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:22px}
+h1{font-size:26px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--ink-muted);font-size:14px;margin:0;max-width:78ch}
+.disclaimer{margin-top:14px;display:flex;gap:10px;align-items:flex-start;
+  background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);
+  padding:10px 14px;font-size:13.5px;color:var(--ink-muted)}
+.disclaimer b{color:var(--ink);font-weight:600}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tabs button{font:inherit;font-size:13.5px;font-weight:500;cursor:pointer;
+  background:var(--panel);color:var(--ink-muted);border:1px solid var(--line);
+  padding:8px 15px;border-radius:2px}
+.tabs button:hover{color:var(--ink);border-color:var(--accent)}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stage{background:var(--panel-2);border:1px solid var(--line);padding:18px;overflow:hidden}
+.stageInner{position:relative;margin:0 auto}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.note{background:var(--panel);border:1px solid var(--line);padding:13px 15px}
+.note h3{margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--accent)}
+.note ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--ink-muted)}
+.note li{margin:3px 0}
+.note code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;color:var(--ink)}
+
+/* ============ หน้าต่างจำลอง ใช้ค่าจริงจาก Theme.psm1 และ UI.psm1 ============ */
+.win{width:1320px;height:880px;transform-origin:top left;position:absolute;top:0;left:0;
+  background:#F3F6F9;color:#1E252D;border:1px solid #97a3ae;
+  font-family:"Leelawadee UI","Segoe UI","IBM Plex Sans Thai",Tahoma,sans-serif;
+  display:flex;flex-direction:column;overflow:hidden;user-select:none}
+.win *{box-sizing:border-box}
+.titlebar{height:30px;background:#f0f0f0;border-bottom:1px solid #dcdcdc;display:flex;
+  align-items:center;padding:0 0 0 10px;font-size:12px;color:#333;flex:none}
+.titlebar .tb-btns{margin-left:auto;display:flex}
+.titlebar .tb-btns span{width:44px;height:29px;display:grid;place-items:center;font-size:11px;color:#555}
+.w-head{height:84px;background:#17324D;position:relative;flex:none}
+.w-head .h1{position:absolute;left:28px;top:14px;font-size:25.3px;font-weight:700;color:#fff;line-height:1.15}
+.w-head .h2{position:absolute;left:30px;top:52px;font-size:12.7px;color:#AAC0D6}
+.w-head .badge{position:absolute;right:28px;top:26px}
+.w-body{flex:1;display:flex;min-height:0}
+.w-side{width:262px;background:#102438;flex:none;display:flex;flex-direction:column}
+.nav{flex:1}
+.nav div{height:62px;margin-bottom:2px;padding:0 0 0 15px;display:flex;flex-direction:column;
+  justify-content:center;color:#C4D4E4;font-size:13.3px;line-height:1.35;cursor:default}
+.nav div.on{background:#0066B2;color:#fff}
+.nav small{font-size:13.3px;opacity:.8;display:block}
+.nav div.on small{opacity:.92}
+.sidefoot{height:150px;flex:none;padding:12px 18px 0;color:#fff}
+.sidefoot .t{font-size:12px;font-weight:700;color:#96AEC6;margin-bottom:11px}
+.sidefoot .l{font-size:12.7px;height:22px}
+.pbar{width:226px;height:10px;background:#233a4f;border:1px solid #0b1a27;margin-top:12px}
+.pbar i{display:block;height:100%;background:#06b025}
+.w-main{flex:1;background:#F3F6F9;min-width:0;overflow:hidden;position:relative}
+.w-status{height:38px;background:#E9EDF2;flex:none;display:flex;align-items:center;
+  padding:0 16px;font-size:12.7px;color:#6C757F}
+.w-status .right{margin-left:auto;font-size:12px}
+
+.badge{display:inline-block;padding:3px 8px;font-size:11.3px;font-weight:700;line-height:1.35}
+.b-warn{background:#FDF2DB;color:#A86E00}
+.b-ok{background:#E2F4EB;color:#158054}
+.b-info{background:#E4F0FA;color:#0066B2}
+.b-dim{background:#EEF1F5;color:#6C757F}
+.b-bad{background:#FDE8E8;color:#B42828}
+
+.scroll{position:absolute;inset:0;padding:20px 24px;overflow:hidden}
+.card{background:#fff;border:1px solid #D6DCE4;border-left:4px solid #0066B2;
+  padding:14px 20px 16px;margin-bottom:14px}
+.card .ct{font-size:16px;font-weight:700;margin-bottom:4px}
+.card .cs{font-size:12.7px;color:#6C757F;margin-bottom:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 12px;
+  background:#fff;border:1px solid #D6DCE4;color:#1E252D;font-size:13.3px;margin-right:10px;
+  font-family:inherit;white-space:nowrap}
+.btn.p{background:#0066B2;border-color:#0066B2;color:#fff}
+.btn.g{background:#F3F6F9;border-color:#F3F6F9;height:28px;font-size:12px;margin-right:8px}
+.btn.off{color:#9aa4ae;border-color:#e2e6ea;background:#f4f6f8}
+.row{display:flex;align-items:center;margin-bottom:10px}
+.row .lb{width:258px;flex:none;font-size:13.3px;padding-right:8px}
+.row .lb.opt{color:#6C757F}
+.row .tx{flex:1;height:28px;border:1px solid #7a869a;background:#fff;font-size:14px;
+  padding:0 6px;display:flex;align-items:center;margin-right:8px;min-width:0;
+  white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.row .tx.empty{background:#FFFBF2}
+.row .dt{width:80px;flex:none}
+.row .fx{width:96px;flex:none;font-size:12.7px;color:#6C757F;display:flex;align-items:center;gap:6px}
+.chk{width:13px;height:13px;border:1px solid #6b7887;background:#fff;display:inline-block;flex:none}
+.chk.on{background:#0066B2;border-color:#0066B2;position:relative}
+.chk.on::after{content:"";position:absolute;left:3.5px;top:.5px;width:4px;height:8px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+
+.fillcard{background:#fff;border:1px solid #D6DCE4;border-left:4px solid #0066B2;
+  height:100%;display:flex;flex-direction:column;overflow:hidden}
+.fillcard .fh{height:62px;flex:none;padding:14px 20px 0}
+.fillcard .fb{flex:1;padding:4px 18px 16px;min-height:0;overflow:hidden}
+table.g{width:100%;border-collapse:collapse;font-size:12.7px;table-layout:fixed}
+table.g th{background:#EEF2F6;color:#1E252D;font-weight:700;height:34px;text-align:left;
+  padding:0 8px;border-bottom:1px solid #D6DCE4;font-size:12.7px}
+table.g td{height:30px;padding:0 8px;border-bottom:1px solid #D6DCE4;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+table.g tr:nth-child(even) td{background:#F9FBFD}
+td.ok{color:#158054}td.warn{color:#A86E00}td.bad{color:#B42828}td.dim{color:#6C757F}
+.lv{width:100%;font-size:12.7px}
+.lv .h{display:flex;border-bottom:1px solid #c9d0d8;background:#fff;height:24px;align-items:center}
+.lv .h span{padding:0 6px;border-right:1px solid #dfe4e9;color:#333}
+.lv .r{display:flex;height:24px;align-items:center}
+.lv .r.sel{background:#CCE4F7}
+.lv .r span{padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.c1{flex:1;min-width:0}.c2{width:78px;flex:none}.c3{width:118px;flex:none}
+.rescard{background:#fff;border:1px solid #D6DCE4;border-left:4px solid #0066B2;
+  padding:14px 20px 16px;margin-bottom:14px}
+.rescard .rh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rescard .rt{font-size:14.7px;font-weight:700;margin-right:6px}
+.ta{border:1px solid #7a869a;background:#fff;height:86px;font-size:14px;padding:4px 6px;
+  overflow:hidden;line-height:1.45}
+.ta.empty{background:#fff}
+.searchbox{width:320px;height:28px;border:1px solid #7a869a;background:#fff;font-size:13.3px;
+  padding:0 6px;display:flex;align-items:center;color:#8b95a1}
+.logbox{border:1px solid #7a869a;background:#F8FAFC;height:200px;padding:5px 7px;
+  font-family:"IBM Plex Mono",Consolas,monospace;font-size:12.7px;line-height:1.75;
+  color:#1E252D;overflow:hidden;white-space:pre-wrap}
+.check{font-size:14px;margin-bottom:4px}
+.check.ok{color:#158054}.check.bad{color:#B42828}.check.warn{color:#A86E00}
+.scrim{position:absolute;inset:0;background:rgba(12,22,32,.42)}
+.dlg{position:absolute;left:270px;top:140px;width:780px;height:600px;background:#F3F6F9;
+  border:1px solid #6f7d8b;box-shadow:0 12px 40px rgba(0,0,0,.35);display:flex;flex-direction:column}
+.dlg .dh{height:72px;background:#17324D;flex:none;position:relative}
+.dlg .dh b{position:absolute;left:20px;top:14px;font-size:17.3px;color:#fff}
+.dlg .dh span{position:absolute;left:20px;top:44px;font-size:12px;color:#B2C6DA}
+.dlg .dbody{flex:1;padding:16px 20px 8px;min-height:0;overflow:hidden}
+.dlg .df{height:82px;flex:none;position:relative}
+.dlg .df .n{position:absolute;left:22px;top:12px;font-size:12px;color:#A86E00}
+.dlg .df .b1{position:absolute;left:452px;top:38px}
+.dlg .df .b2{position:absolute;left:596px;top:38px}
+@media (prefers-reduced-motion:no-preference){.stage,.notes{transition:opacity .18s ease}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Audit Onsite Report V0.8</h1>
+    <p class="sub">หน้าตาของ UI ที่เขียนใหม่ใน Phase 4.2 V0.8 — Windows Forms บน PowerShell 5.1 หน้าต่างขนาด 1320 × 880</p>
+    <div class="disclaimer">
+      <div><b>นี่คือภาพจำลอง ไม่ใช่ภาพหน้าจอจริง</b> — เครื่องที่ผมทำงานอยู่เป็น Linux จึงรัน Windows Forms ไม่ได้
+      ทุกค่าในภาพนี้ถอดมาจากโค้ดจริง (สีจาก <code style="font-family:'IBM Plex Mono',monospace">AuditOnsite.Theme.psm1</code> ขนาดและข้อความจาก <code style="font-family:'IBM Plex Mono',monospace">AuditOnsite.UI.psm1</code>)
+      แต่การเรนเดอร์ตัวอักษรและคอนโทรลของ Windows จริงจะต่างจากเบราว์เซอร์เล็กน้อย</div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="stage"><div class="stageInner" id="stageInner"><div class="win" id="win"></div></div></div>
+  <div class="notes" id="notes"></div>
+</div>
+
+<script>
+const P = { // ข้อมูลจริงจาก Config/Onsite_Mapping_Config.json
+  mappings:[
+    ["1","pending_file","กระบวนการรับลูกค้า และการบันทึก KYC ข้อมูลลูกค้า การใช้งาน Dip Chip"],
+    ["2","pending_file","การเบิกถอนเงินสดตั้งแต่ 5 ล้านบาทขึ้นไป"],
+    ["3.1","pending_file","การควบคุมสมุดฝากเงินคงเหลือ"],
+    ["3.2","draft_observed","การรับฝากสมุดฝากเงิน / สมุดเงินฝากที่ผู้ฝากทิ้งไว้ที่สาขา"],
+    ["4","pending_file","การใช้บัตร/รหัส และการมอบอำนาจ"],
+    ["5","pending_file","การยกเลิกการทำรายการ"],
+    ["6","pending_file","การปฏิบัติงานตาม PDPA"],
+    ["7","pending_file","การปฏิบัติงานเคาน์เตอร์ให้บริการลูกค้า"],
+    ["8","pending_file","การใช้หลักประกันมูลค่าสูง"],
+    ["9","pending_file","การตรวจนับเงินสด"],
+    ["10","pending_file","การไม่นำส่งสลากกินแบ่งรัฐบาลหกหลัก"]
+  ]
+};
+const RESULT_TEXT = {
+  "3.2":"จากการตรวจสอบทะเบียนคุมสมุดฝากเงินที่ผู้ฝากทิ้งไว้ที่สาขา ณ วันที่ 31 กรกฎาคม 2569 พบว่าสาขามีการบันทึกทะเบียนคุมครบถ้วน และจัดเก็บในตู้นิรภัยตามระเบียบ",
+  "1":"สาขาปฏิบัติตามกระบวนการรับลูกค้าและบันทึก KYC ครบถ้วน มีการใช้งาน Dip Chip ทุกรายการที่กำหนด",
+  "2":"ไม่พบรายการเบิกถอนเงินสดตั้งแต่ 5 ล้านบาทขึ้นไปในเดือนที่ตรวจสอบ"
+};
+const badge=(t,k)=>`<span class="badge b-${k}">${t}</span>`;
+
+const NAV=[["1  ข้อมูลรายงาน","15 ช่องข้อมูลหัวรายงาน"],["2  ไฟล์ Excel และ Scan","เลือกไฟล์และอ่านค่าอัตโนมัติ"],
+           ["3  ผลตรวจ 11 ข้อ","กรอกหรือแก้ผลตรวจรายข้อ"],["4  ตรวจสอบและ Export","ตรวจ Template แล้วสร้าง Word"]];
+
+function shell(active,main,progress,status,dialog){
+  return `<div class="titlebar">Audit Onsite Report - Phase 4.2 V0.8 UI<div class="tb-btns"><span>&#8210;</span><span>&#9744;</span><span>&#10005;</span></div></div>
+  <div class="w-head"><div class="h1">Audit Onsite Report</div>
+    <div class="h2">สรุปรายงานผลการตรวจสอบสาขา - ทำงานออฟไลน์ ไม่แก้ไขไฟล์ Excel ต้นฉบับ</div>
+    <div class="badge b-warn" style="position:absolute;right:28px;top:26px">PHASE 4.2 - TEST</div></div>
+  <div class="w-body"><div class="w-side"><div class="nav">
+    ${NAV.map((n,i)=>`<div class="${i===active?'on':''}">${n[0]}<small>${n[1]}</small></div>`).join('')}
+  </div><div class="sidefoot"><div class="t">ความคืบหน้า</div>
+    <div class="l">ข้อมูลรายงาน&nbsp; ${progress[0]}</div>
+    <div class="l">ผลตรวจ&nbsp; ${progress[1]}</div>
+    <div class="l">Template&nbsp; ${progress[2]}</div>
+    <div class="pbar"><i style="width:${progress[3]}%"></i></div></div></div>
+  <div class="w-main">${main}${dialog||''}</div></div>
+  <div class="w-status"><span style="color:${status[1]}">${status[0]}</span>
+    <span class="right">Config phase4-v0.5.2 &nbsp;|&nbsp; F5 = Scan &nbsp;|&nbsp; Ctrl+E = Export &nbsp;|&nbsp; Ctrl+1-4 = สลับหน้า</span></div>`;
+}
+
+const F=(lb,val,req,date,fix,empty)=>`<div class="row">
+  <div class="lb ${req?'':'opt'}">${lb}${req?'&nbsp;&nbsp;*':''}</div>
+  <div class="tx ${empty?'empty':''}">${val||''}</div>
+  <div class="dt">${date?'<span class="btn g">วันนี้</span>':''}</div>
+  <div class="fx"><span class="chk ${fix?'on':''}"></span>จำค่า</div></div>`;
+
+const page1=`<div class="scroll">
+  <div style="margin-bottom:14px"><span class="btn p">บันทึกค่าที่ติ๊กจำไว้</span><span class="btn">ล้างค่าจำทั้งหมด</span><span class="btn">เริ่มสาขาใหม่</span><span class="btn">ใส่วันที่วันนี้ทุกช่องวันที่</span></div>
+  <div class="card"><div class="ct">ข้อมูลหน่วยงานผู้ตรวจสอบ</div>
+    <div class="cs">ส่วนหัวหนังสือ ใช้ซ้ำได้ทุกสาขา ติ๊ก จำค่า เพื่อบันทึกถาวร</div>
+    ${F("1.1 หน่วยงาน","ส่วนตรวจสอบภายในสายสาขา 4",1,0,1,0)}
+    ${F("1.2 โทรศัพท์","โทร. 999306",1,0,1,0)}
+    ${F("1.3 เลขที่หนังสือ","ตข.(จผ.)       /2569",1,0,0,0)}
+    ${F("1.4 วันที่รายงาน","1 กันยายน 2569",1,1,0,0)}</div>
+  <div class="card"><div class="ct">ข้อมูลสาขาที่รับตรวจ</div>
+    <div class="cs">เปลี่ยนทุกครั้งที่ขึ้นสาขาใหม่</div>
+    ${F("2.1 ชื่อสาขา","สาขาบางรัก",1,0,0,0)}
+    ${F("2.2 เรียน","ผจส. ",1,0,1,0)}
+    ${F("2.3 เลขที่อนุมัติแผนตรวจสอบ","",1,0,0,1)}
+    ${F("2.4 วันที่อนุมัติ","",1,1,0,1)}</div>
+  <div class="card"><div class="ct">ขอบเขตการตรวจสอบ</div>
+    <div class="cs">ข้อ 3.2 และ 3.3 ไม่ได้ใช้ใน Template ปัจจุบัน แต่คงไว้ตามข้อกำหนด 15 ช่อง</div>
+    ${F("3.1 รายชื่อผู้ตรวจสอบ","นางสาวศิริพร ใจดี และนายวิชัย มั่นคง",1,0,0,0)}
+    ${F("3.2 ขอบเขตเดือน","กรกฎาคม 2569",0,1,0,0)}</div></div>`;
+
+const scanRows=[
+  ["3.2 การรับฝากสมุดฝากเงิน-สาขาบางรัก.xlsx","3.2","READY","DRAFT","อ่านจาก 3.2 การรับฝากสมุดฝากเงิน!A17","ok","warn"],
+  ["9 การตรวจนับเงินสด-สาขาบางรัก.xlsx","","READY","PENDING","ยังไม่มี Mapping ที่ยืนยันสำหรับไฟล์นี้ ให้กรอกผลตรวจด้วยมือ","ok","dim"],
+  ["6 PDPA-สาขาบางรัก.xlsm","","WARNING","PENDING","ยังไม่มี Mapping ที่ยืนยันสำหรับไฟล์นี้ ให้กรอกผลตรวจด้วยมือ","warn","dim"]];
+const page2=`<div class="scroll" style="padding:20px 24px;display:flex;flex-direction:column">
+  <div style="height:58px;flex:none"><span class="btn p">เลือกไฟล์ Excel</span><span class="btn">นำออกจากรายการ</span><span class="btn">ล้างรายการ</span><span class="btn p">ตรวจและ Scan Mapping  (F5)</span></div>
+  <div style="flex:1;display:flex;gap:12px;min-height:0">
+    <div style="flex:0 0 42%;min-width:0"><div class="fillcard">
+      <div class="fh"><div class="ct">ไฟล์ที่เลือก</div><div class="cs">ลากไฟล์ .xlsx หรือ .xlsm มาวางในกรอบนี้ได้</div></div>
+      <div class="fb"><div class="lv">
+        <div class="h"><span class="c1">ชื่อไฟล์</span><span class="c2">ขนาด</span><span class="c3">แก้ไขล่าสุด</span></div>
+        <div class="r sel"><span class="c1">3.2 การรับฝากสมุดฝากเงิน-สาขาบางรัก.xlsx</span><span class="c2">248 KB</span><span class="c3">28/08/2026 16:41</span></div>
+        <div class="r"><span class="c1">9 การตรวจนับเงินสด-สาขาบางรัก.xlsx</span><span class="c2">96 KB</span><span class="c3">29/08/2026 09:12</span></div>
+        <div class="r"><span class="c1">6 PDPA-สาขาบางรัก.xlsm</span><span class="c2">412 KB</span><span class="c3">29/08/2026 10:03</span></div>
+      </div></div></div></div>
+    <div style="flex:1;min-width:0"><div class="fillcard">
+      <div class="fh"><div class="ct">ผลการตรวจไฟล์และ Mapping</div><div class="cs">สถานะ Workbook แยกจากสถานะ Mapping ตามกฎเดิม</div></div>
+      <div class="fb"><table class="g"><colgroup><col style="width:190px"><col style="width:52px"><col style="width:92px"><col style="width:92px"><col></colgroup>
+        <tr><th>ไฟล์</th><th>ข้อ</th><th>Workbook</th><th>Mapping</th><th>รายละเอียด</th></tr>
+        ${scanRows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="${r[5]}">${r[2]}</td><td class="${r[6]}">${r[3]}</td><td>${r[4]}</td></tr>`).join('')}
+      </table></div></div></div>
+  </div></div>`;
+
+const srcOf=id=>id==="3.2"?["AUTO_DRAFT","warn"]:(RESULT_TEXT[id]?["MANUAL","info"]:["ยังไม่กรอก","bad"]);
+const page3=`<div class="scroll" style="padding:0">
+  <div style="height:60px;padding:16px 24px 0;display:flex;align-items:flex-start;gap:12px">
+    <div class="searchbox">ค้นหาหัวข้อ...</div>
+    <div style="font-size:12px;color:#6C757F;padding-top:6px">ค้นหาหัวข้อ</div>
+    <div style="font-size:13.3px;font-weight:700;color:#0066B2;padding-top:5px;margin-left:20px">กรอกแล้ว 3 จาก 11 ข้อ</div></div>
+  <div style="padding:6px 24px 0">
+  ${P.mappings.slice(0,4).map(m=>{const s=srcOf(m[0]);const st=m[1]==="draft_observed"?["draft_observed","warn"]:["pending_file","dim"];
+    return `<div class="rescard"><div class="rh"><span class="rt">ข้อ ${m[0]}   ${m[2]}</span>${badge(st[0],st[1])}${badge(s[0],s[1])}</div>
+    <div class="ta ${RESULT_TEXT[m[0]]?'':'empty'}">${RESULT_TEXT[m[0]]||''}</div></div>`}).join('')}
+  </div></div>`;
+
+const page4=`<div class="scroll">
+  <div class="card"><div class="ct">รายการตรวจก่อน Export</div><div class="cs">ต้องผ่านครบทุกข้อ ปุ่ม Export จึงจะทำงาน</div>
+    <div class="check bad">ยังไม่ผ่าน   ขาด 2 ช่อง: APPROVAL_NO, APPROVAL_DATE</div>
+    <div class="check bad">ยังไม่ผ่าน   ผลตรวจกรอกแล้ว 3 จาก 11 ข้อ</div>
+    <div class="check ok">ผ่าน   พบ Placeholder 28/28</div>
+    <div style="margin-top:12px"><span class="btn">ตรวจ Template และ Placeholder</span><span class="btn off">Export Word  (Ctrl+E)</span><span class="btn">เปิดโฟลเดอร์ Output</span></div></div>
+  <div class="card"><div class="ct">สรุปแหล่งข้อมูลผลตรวจ</div>
+    <div class="cs">MANUAL คือกรอกเอง  AUTO_DRAFT คืออ่านจาก Excel แต่ Mapping ยังไม่ยืนยัน  AUTO_CONFIRMED คือ Mapping ยืนยันแล้ว</div>
+    <div style="height:330px;overflow:hidden"><table class="g"><colgroup><col style="width:52px"><col><col style="width:130px"><col style="width:96px"></colgroup>
+      <tr><th>ข้อ</th><th>หัวข้อ</th><th>แหล่งข้อมูล</th><th>สถานะ</th></tr>
+      ${P.mappings.map(m=>{const s=srcOf(m[0]);const done=s[0]!=="ยังไม่กรอก";
+        return `<tr><td>${m[0]}</td><td>${m[2]}</td><td class="${done?(s[1]==='warn'?'warn':'dim'):'dim'}">${done?s[0]:'-'}</td>
+        <td class="${done?'ok':'bad'}">${done?'พร้อม':'ยังไม่กรอก'}</td></tr>`}).join('')}
+    </table></div></div>
+  <div class="card"><div class="ct">บันทึกการทำงาน</div><div class="cs">ผลการตรวจ Template และผลการ Export ล่าสุด</div>
+    <div class="logbox">14:22:07  ตรวจ Template: READY | พบ Placeholder 28/28
+14:21:55  เริ่มสาขาใหม่ ล้างข้อมูลสาขาและผลตรวจแล้ว
+14:20:31  เปิดโปรแกรม Phase 4.2 V0.8 UI</div></div></div>`;
+
+const dlgRows=P.mappings.map(m=>{const s=m[0]==="3.2"?["AUTO_DRAFT","warn"]:["MANUAL","dim"];
+  return `<tr><td>${m[0]}</td><td>${m[2]}</td><td class="${s[1]==='warn'?'warn':''}" style="${s[1]==='warn'?'':'color:#0066B2'}">${s[0]}</td></tr>`}).join('');
+const dialog=`<div class="scrim"></div><div class="dlg">
+  <div class="dh"><b>ตรวจแหล่งข้อมูลผลตรวจก่อนสร้างไฟล์ Word</b>
+    <span>ไฟล์ปลายทาง: สรุปรายงานผลการตรวจสอบ-สาขาบางรัก-20260901-142530.docx</span></div>
+  <div class="dbody"><table class="g"><colgroup><col style="width:52px"><col><col style="width:150px"></colgroup>
+    <tr><th>ข้อ</th><th>หัวข้อ</th><th>แหล่งข้อมูล</th></tr>${dlgRows}</table></div>
+  <div class="df"><div class="n">AUTO_DRAFT คือค่าที่อ่านจาก Excel แต่ Mapping ยังไม่ยืนยัน กรุณาตรวจข้อความก่อนยืนยัน</div>
+    <span class="btn b1">ยกเลิก</span><span class="btn p b2">ยืนยันและ Export</span></div></div>`;
+
+const SCREENS=[
+ {t:"1 · ข้อมูลรายงาน",html:()=>shell(0,page1,["12/15","3/11","ยังไม่พร้อม",52],
+   ["ยังไม่พร้อม Export   |   ข้อมูลรายงานขาด 2 ช่อง   |   ผลตรวจ 3/11   |   Template: ยังไม่ตรวจ","#6C757F"]),
+  notes:[["สิ่งที่เห็น",["15 ช่องแบ่งเป็น 4 การ์ดตามหัวข้อ แทนที่จะเรียงยาว 15 บรรทัด","ช่องจำเป็นมีเครื่องหมาย * และพื้นสีครีมเมื่อยังว่าง (2.3 กับ 2.4)","ปุ่ม <code>วันนี้</code> ข้างช่องวันที่ เติม 1 กันยายน 2569 ให้ทันที"]],
+         ["ที่คืนกลับมาจาก V0.7",["ปุ่ม <code>ล้างค่าจำทั้งหมด</code> และ <code>เริ่มสาขาใหม่</code> ที่หายไป ทั้งที่ handoff เขียนว่าห้ามลบ"]]]},
+ {t:"2 · ไฟล์ Excel และ Scan",html:()=>shell(1,page2,["12/15","3/11","ยังไม่พร้อม",52],["Scan เสร็จ 3 รายการ","#6C757F"]),
+  notes:[["สิ่งที่เห็น",["รายการไฟล์บอกขนาดและวันที่แก้ไข ลากไฟล์มาวางได้ ลบทีละไฟล์ได้","ตารางผลใส่สีตามสถานะ READY เขียว WARNING/DRAFT ส้ม BLOCKED แดง","สถานะ Workbook แยกคอลัมน์จากสถานะ Mapping ตามกฎเดิม"]],
+         ["ต่างจาก V0.7",["V0.7 เลือกไฟล์แล้วลบออกไม่ได้ ต้องปิดโปรแกรม","สองตารางยืดตามหน้าต่าง ไม่ใช่กล่องขนาดตายตัว 550×520"]]]},
+ {t:"3 · ผลตรวจ 11 ข้อ",html:()=>shell(2,page3,["12/15","3/11","ยังไม่พร้อม",52],
+   ["ยังไม่พร้อม Export   |   ข้อมูลรายงานขาด 2 ช่อง   |   ผลตรวจ 3/11   |   Template: ยังไม่ตรวจ","#6C757F"]),
+  notes:[["สิ่งที่เห็น",["แต่ละข้อเป็นการ์ด มีป้ายสถานะ Mapping และป้ายแหล่งข้อมูลติดอยู่ที่หัวข้อ","ข้อ 3.2 ขึ้น AUTO_DRAFT สีส้ม เตือนว่ายังไม่ยืนยัน Mapping","ข้อที่ยังว่างขึ้นป้ายแดง ยังไม่กรอก เห็นทันทีว่าเหลือข้อไหน","ช่องค้นหาด้านบนกรองการ์ดตามเลขข้อหรือคำในหัวข้อ"]],
+         ["หมายเหตุ",["ภาพนี้ตัดให้เห็น 4 ข้อแรก ของจริงเลื่อนดูได้ครบ 11 ข้อ"]]]},
+ {t:"4 · ตรวจสอบและ Export",html:()=>shell(3,page4,["12/15","3/11","พร้อม",70],
+   ["ยังไม่พร้อม Export   |   ข้อมูลรายงานขาด 2 ช่อง   |   ผลตรวจ 3/11   |   Template: พร้อม","#6C757F"]),
+  notes:[["สิ่งที่เห็น",["Checklist 3 บรรทัดบอกชัดว่าติดอะไร ระบุชื่อช่องที่ขาดให้เลย","ปุ่ม Export เป็นสีเทาจนกว่าจะผ่านครบทั้ง 3 ข้อ","ตารางสรุป 11 ข้อพร้อมแหล่งข้อมูล อัปเดตอัตโนมัติ","ช่องบันทึกการทำงานเก็บผลตรวจ Template และผล Export ล่าสุด"]],
+         ["ต่างจาก V0.7",["V0.7 ต้องกดปุ่ม Export ก่อนถึงจะรู้ว่าขาดอะไร แล้วเด้ง MessageBox ออกมา"]]]},
+ {t:"Export Gate",html:()=>shell(3,page4,["15/15","11/11","พร้อม",100],["พร้อม Export  ตรวจครบทุกเงื่อนไขแล้ว","#158054"],dialog),
+  notes:[["สิ่งที่เห็น",["หน้าต่างยืนยันแบบตาราง แทน MessageBox ข้อความ 11 บรรทัดของ V0.7","แหล่งข้อมูลแต่ละข้อใส่สี ข้อที่เป็น AUTO_DRAFT เด่นออกมาให้ตรวจก่อน","ชื่อไฟล์ปลายทางแสดงบนหัวหน้าต่างตั้งแต่ยังไม่กด"]],
+         ["กฎเดิมที่ยังอยู่",["กด ยกเลิก แล้วต้องไม่มีไฟล์เกิดขึ้น","Output เป็นไฟล์ใหม่เสมอ ไม่ทับไฟล์เดิม","แถบสถานะล่างเปลี่ยนเป็นสีเขียวเมื่อผ่านครบทุกเงื่อนไข"]]]}
+];
+
+const tabsEl=document.getElementById('tabs'),winEl=document.getElementById('win'),
+      notesEl=document.getElementById('notes'),innerEl=document.getElementById('stageInner');
+let cur=0;
+SCREENS.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.textContent=s.t;
+  b.setAttribute('role','tab');b.addEventListener('click',()=>show(i));tabsEl.appendChild(b)});
+function show(i){cur=i;
+  [...tabsEl.children].forEach((b,n)=>b.setAttribute('aria-selected',n===i));
+  winEl.innerHTML=SCREENS[i].html();
+  notesEl.innerHTML=SCREENS[i].notes.map(n=>`<div class="note"><h3>${n[0]}</h3><ul>${n[1].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
+}
+function fit(){const w=innerEl.parentElement.clientWidth-36;const s=Math.min(1,w/1320);
+  winEl.style.transform=`scale(${s})`;innerEl.style.width=(1320*s)+'px';innerEl.style.height=(880*s)+'px'}
+new ResizeObserver(fit).observe(document.body);
+show(0);fit();
+</script>
