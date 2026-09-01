@@ -1,0 +1,14 @@
+﻿{
+  "required_unique": 28,
+  "removed": [
+    "[[AUDIT_PERIOD]]",
+    "[[DATA_AS_OF]]"
+  ],
+  "added": [
+    "[[ONSITE_DATE]]",
+    "[[MEETING_DATE]]",
+    "[[LEAD_DATE]]",
+    "[[AUDITEE_DATE]]"
+  ],
+  "shared_date_source": "REPORT_DATE"
+}
